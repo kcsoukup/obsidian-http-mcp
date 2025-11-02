@@ -55,6 +55,7 @@ nano .env     # Linux/Mac
 ```
 
 Your `.env` should look like:
+
 ```env
 OBSIDIAN_API_KEY=your_actual_api_key_here
 OBSIDIAN_BASE_URL=http://127.0.0.1:27123
@@ -82,9 +83,10 @@ claude mcp list
 # Should show: obsidian: http://localhost:3000/mcp (HTTP) - ✓ Connected
 ```
 
-#### Step 6: Use with Claude Code CLI
+#### Step 6: Use with Claude Code CLI/codex or any other ClI
 
 Start a conversation and your MCP tools will be available:
+
 ```bash
 claude
 # Tools are accessible via /mcp command
@@ -178,22 +180,6 @@ See `obsidian-http-mcp --help` for all options.
 │   Port 27123    │
 └─────────────────┘
 ```
-
-## ⚠️ Important Notes
-
-### Path Format (Obsidian REST API Requirement)
-
-**Directories must end with `/`**:
-
-- ✅ Correct: `list_files("Projects/")`
-- ❌ Wrong: `list_files("Projects")`
-
-**Files must NOT end with `/`**:
-
-- ✅ Correct: `read_file("Notes/meeting.md")`
-- ❌ Wrong: `read_file("Notes/meeting.md/")`
-
-The MCP tool descriptions guide Claude automatically, but keep this in mind if using the API directly.
 
 ## 🤝 Contributing
 
