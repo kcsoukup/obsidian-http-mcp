@@ -58,8 +58,9 @@ export async function search(
             });
           }
         }
-      } catch {
-        // Skip files that can't be read
+      } catch (error) {
+        // Skip files that can't be read, but log the error for debugging
+        console.error(`Failed to read file ${file}:`, error instanceof Error ? error.message : error);
         continue;
       }
     }
