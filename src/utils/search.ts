@@ -2,9 +2,13 @@
 
 import type { FileMatch, SearchOptions } from '../types/search.js';
 
-// Normalisation simple (lowercase + trim)
+// Normalize text for matching (remove emojis/symbols, lowercase, trim)
 export function normalize(str: string): string {
-  return str.toLowerCase().trim();
+  return str
+    .replace(/[\u{1F300}-\u{1F9FF}]/gu, '') // Remove emojis (🧪, 📝, etc)
+    .replace(/[^\w\s]/g, '')                 // Remove special chars (!@#$%^&*)
+    .toLowerCase()
+    .trim();
 }
 
 // Contains match (simple et rapide)
@@ -68,7 +72,7 @@ export function fuzzyMatch(query: string, candidates: string[]): FileMatch[] {
         matchType: 'fuzzy' as const
       };
     })
-    .filter(m => m.score >= 0.6)  // Seuil minimum
+    .filter(m => m.score >= 0.8)  // Threshold: 1 typo OK, 2+ rejected
     .sort((a, b) => b.score - a.score);
 }
 

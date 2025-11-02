@@ -80,6 +80,12 @@ export async function findFiles(
       },
     };
   } catch (error) {
+    // Log error for debugging (helps diagnose API issues)
+    console.error('find_files failed:', {
+      query: args.query,
+      error: error instanceof Error ? error.message : error,
+    });
+
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
