@@ -76,26 +76,54 @@ app.post('/mcp', async (req, res) => {
 
 - [x] Relire doc MCP SDK
 - [x] Vérifier HTTPServerTransport → `StreamableHTTPServerTransport` trouvé
-- [ ] Update TECHNICAL.md (Express + StreamableHTTPServerTransport)
-- [ ] Install Express dependency
-- [ ] Réécrire src/server/http.ts avec vrai SDK
-- [ ] Tester avec `claude mcp list`
-- [ ] Valider détection automatique
+- [x] Update TECHNICAL.md (Express + StreamableHTTPServerTransport)
+- [x] Install Express dependency
+- [x] Réécrire src/server/http.ts avec vrai SDK
+- [x] Tester avec `claude mcp list`
+- [x] Valider détection automatique
 
-## Contexte technique
+## ✅ Résolution finale
 
-**Env**: WSL2 + Windows
-- Serveur tourne sur Windows (localhost:3000)
-- Claude CLI sur WSL2 (accès via 172.19.32.1:3000)
-- Obsidian REST API sur Windows (localhost:27123)
+**Date**: 2025-11-02
 
-**Stack**:
+**Problème résolu**: Serveur MCP non détecté par `claude mcp list`
+
+**Solution implémentée**:
+1. Remplacé Hono par Express
+2. Implémenté StreamableHTTPServerTransport du SDK officiel
+3. Utilisé `Server.setRequestHandler()` pour enregistrer les tools
+4. Découvert commande d'installation correcte: `claude mcp add --transport http`
+
+**Résultat**:
+```bash
+$ claude mcp list
+obsidian-http: http://localhost:3000/mcp (HTTP) - ✓ Connected
+```
+
+**Installation user**:
+```bash
+# 1. Start server
+npm run dev
+
+# 2. Add to Claude CLI
+claude mcp add --transport http obsidian http://localhost:3000/mcp
+
+# 3. Verify
+claude mcp list
+```
+
+**Commit**: fee8b6c - "Fix: Replace custom HTTP with StreamableHTTPServerTransport"
+
+**Status**: ✅ **FONCTIONNEL** - Serveur MCP conforme spec 2025-03-26
+
+## Contexte technique final
+
+**Env**: WSL2 (dev) + Windows (test avec Obsidian)
+- Serveur dev sur WSL2 (localhost:3000)
+- Obsidian REST API sur Windows (172.19.32.1:27123 depuis WSL2)
+
+**Stack finale**:
 - Node.js, TypeScript
-- @modelcontextprotocol/sdk v1.20.2
-- Hono (peut-être à remplacer si SDK a son propre serveur HTTP)
-
-## Notes
-
-User a raison de questionner. Un vrai MCP server doit être auto-découvert par `claude mcp list`.
-
-Notre implémentation actuelle = hack qui fonctionne en curl, mais pas conforme MCP.
+- Express 4.21.2
+- @modelcontextprotocol/sdk v1.20.2 (StreamableHTTPServerTransport)
+- axios (Obsidian REST API)
