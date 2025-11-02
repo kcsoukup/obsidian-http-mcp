@@ -43,24 +43,52 @@ npm install -g obsidian-http-mcp
    - Copy the API key
    - Verify port 27123 is shown
 
-#### Step 2: Start the server
+#### Step 2: Configure the server
 
 ```bash
-obsidian-http-mcp --api-key YOUR_API_KEY --port 3000
+# Copy example config
+cp .env.example .env
+
+# Edit .env and paste your API key
+notepad .env  # Windows
+nano .env     # Linux/Mac
 ```
 
-#### Step 3: Connect Claude Code CLI
+Your `.env` should look like:
+```env
+OBSIDIAN_API_KEY=your_actual_api_key_here
+OBSIDIAN_BASE_URL=http://127.0.0.1:27123
+PORT=3000
+```
+
+#### Step 3: Start the server
+
+```bash
+npm run dev
+# Server will start on http://localhost:3000
+```
+
+#### Step 4: Connect Claude Code CLI
 
 ```bash
 # Add HTTP MCP server
 claude mcp add --transport http obsidian http://localhost:3000/mcp
 ```
 
-#### Step 4: Test the connection
+#### Step 5: Test the connection
 
 ```bash
 claude mcp list
 # Should show: obsidian: http://localhost:3000/mcp (HTTP) - ✓ Connected
+```
+
+#### Step 6: Use with Claude Code CLI
+
+Start a conversation and your MCP tools will be available:
+```bash
+claude
+# Tools are accessible via /mcp command
+# Or Claude will automatically suggest them based on your requests
 ```
 
 ## 🛠️ Features
@@ -116,19 +144,15 @@ claude mcp list
 "Create a meeting note for today in /Meetings"
 ```
 
-### Environment Variables
+### Advanced: Command Line Arguments
+
+If you prefer command-line arguments over `.env`:
 
 ```bash
-# .env file
-OBSIDIAN_API_KEY=your_api_key_here
-OBSIDIAN_BASE_URL=http://127.0.0.1:27123
-PORT=3000
+obsidian-http-mcp --api-key YOUR_KEY --port 3000
 ```
 
-```bash
-# Start with env file
-obsidian-http-mcp
-```
+See `obsidian-http-mcp --help` for all options.
 
 ## 🏗️ Architecture
 
