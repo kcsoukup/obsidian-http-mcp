@@ -114,7 +114,47 @@ claude mcp list
 
 **Commit**: fee8b6c - "Fix: Replace custom HTTP with StreamableHTTPServerTransport"
 
-**Status**: ✅ **FONCTIONNEL** - Serveur MCP conforme spec 2025-03-26
+**Status**: ⚠️ **PARTIELLEMENT FONCTIONNEL** - Serveur détecté mais tools non disponibles
+
+## ⚠️ Problème restant
+
+**Symptôme**:
+- ✅ `claude mcp list` détecte le serveur: `obsidian-http: http://localhost:3000/mcp (HTTP) - ✓ Connected`
+- ✅ Curl manuel fonctionne (tools/list retourne les 7 tools)
+- ❌ **Tools n'apparaissent PAS dans `/mcp` de Claude Code CLI**
+- ❌ **Pas de `mcp__obsidian-http__*` dans les outils disponibles**
+
+**Ce qui fonctionne**:
+- Serveur HTTP répond correctement
+- StreamableHTTPServerTransport implémenté
+- Headers Accept application/json + text/event-stream requis et fonctionnels
+- JSON-RPC responses conformes
+
+**Ce qui manque**:
+- Comprendre pourquoi les tools ne sont pas exposés à Claude
+- Possibilité: scope (project vs global)?
+- Possibilité: redémarrage Claude CLI nécessaire?
+- Possibilité: implémentation MCP incomplète?
+
+**Tests effectués**:
+```bash
+# ✅ Détection
+$ claude mcp list
+obsidian-http: http://localhost:3000/mcp (HTTP) - ✓ Connected
+
+# ❌ Get tool
+$ claude mcp get obsidian-http list_dir '{}'
+No MCP server found with name: obsidian-http
+
+# ❌ Tools pas dans /mcp
+/mcp ne liste pas obsidian-http
+```
+
+**À investiguer**:
+- Documentation officielle sur HTTP MCP server testing
+- Comparer avec un MCP HTTP qui marche (ex: playwright)
+- Vérifier si protocol handshake manquant
+- Tester scope project vs global
 
 ## Contexte technique final
 
