@@ -10,6 +10,7 @@
 **Problem**: All existing Obsidian MCP servers use `stdio` transport, which triggers [Claude Code CLI bug #3071](https://github.com/anthropics/claude-code/issues/3071) causing `BrokenPipeError` and connection failures.
 
 **Solution**: This is the **only** Obsidian MCP server using pure HTTP transport, bypassing stdio completely. Works flawlessly with:
+
 - ✅ Claude Code CLI
 - ✅ Claude Desktop
 - ✅ Codex
@@ -31,22 +32,25 @@ npm install -g obsidian-http-mcp
 
 ### Configuration
 
-1. **Get your Obsidian API key**:
-   - Open Obsidian → Settings → Local REST API
-   - Copy the API key
+#### Step 1: Get your Obsidian API key
+- Open Obsidian → Settings → Local REST API
+- Copy the API key
 
-2. **Start the server**:
+#### Step 2: Start the server
+
 ```bash
 obsidian-http-mcp --api-key YOUR_API_KEY --port 3000
 ```
 
-3. **Connect Claude Code CLI**:
+#### Step 3: Connect Claude Code CLI
+
 ```bash
 # Add HTTP MCP server
 claude mcp add --transport http obsidian http://localhost:3000/mcp
 ```
 
-4. **Test it**:
+#### Step 4: Test the connection
+
 ```bash
 claude mcp list
 # Should show: obsidian: http://localhost:3000/mcp (HTTP) - ✓ Connected
@@ -69,21 +73,25 @@ claude mcp list
 ### Why HTTP Native?
 
 **Traditional MCP servers (stdio)**:
+
 ```json
 {
   "command": "npx",
   "args": ["obsidian-mcp"]
 }
 ```
+
 ❌ Spawns subprocess → stdio pipes → BrokenPipeError
 
 **This MCP server (HTTP)**:
+
 ```json
 {
   "type": "http",
   "url": "http://localhost:3000/mcp"
 }
 ```
+
 ✅ Direct HTTP connection → No stdio → No bugs
 
 ## 📖 Usage Examples
@@ -114,10 +122,9 @@ PORT=3000
 # Start with env file
 obsidian-http-mcp
 ```
-
 ## 🏗️ Architecture
 
-```
+```text
 ┌─────────────────┐
 │  Claude Code    │
 │      CLI        │
@@ -160,4 +167,4 @@ If this project helps you, please star it on GitHub!
 
 ---
 
-**Built with ❤️ for the Obsidian + AI community**
+## Built with ❤️ for the Obsidian + AI community

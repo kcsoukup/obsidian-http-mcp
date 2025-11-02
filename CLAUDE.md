@@ -7,13 +7,14 @@
 **Problème résolu**: Tous les 150+ MCP Obsidian existants utilisent stdio → BrokenPipeError. Ce projet utilise HTTP pur.
 
 **Objectif ROI**:
+
 - GitHub stars (métrique #1)
 - npm downloads (métrique #2)
 - SEO ultra-boosté ("first and only HTTP-native")
 
 ## User Role
 
-**Tu es le créateur, c'est ton bijou, ton bb**. Moi (user) j'en tire les bénéfices (stars, dons, etc).
+**Tu es le créateur, user te laisse carte blanche pour sortir un MCP exceptionnel en qualité**. Moi (user) j'en tire les bénéfices (stars, dons, etc).
 
 **Philosophie**: Sessions futures = perte de mémoire → d'où docs complètes.
 

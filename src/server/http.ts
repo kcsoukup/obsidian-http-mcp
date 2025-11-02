@@ -17,10 +17,10 @@ export function createHttpServer(client: ObsidianClient, port: number) {
   const app = express();
   app.use(express.json());
 
-  // Create MCP Server
+  // Create MCP Server instance (singleton for all requests)
   const mcpServer = new Server(
     {
-      name: 'obsidian-http-mcp',
+      name: 'obsidian-http',
       version: '1.0.0',
     },
     {
@@ -40,7 +40,10 @@ export function createHttpServer(client: ObsidianClient, port: number) {
           inputSchema: {
             type: 'object',
             properties: {
-              path: { type: 'string', description: 'Path to list (optional, default: root)' },
+              path: {
+                type: 'string',
+                description: 'Path to list (optional, default: root)'
+              },
             },
           },
         },
@@ -50,8 +53,14 @@ export function createHttpServer(client: ObsidianClient, port: number) {
           inputSchema: {
             type: 'object',
             properties: {
-              path: { type: 'string', description: 'Path to list (optional, default: root)' },
-              extension: { type: 'string', description: 'Filter by extension (e.g., "md")' },
+              path: {
+                type: 'string',
+                description: 'Path to list (optional, default: root)'
+              },
+              extension: {
+                type: 'string',
+                description: 'Filter by extension (e.g., "md")'
+              },
             },
           },
         },
@@ -61,7 +70,10 @@ export function createHttpServer(client: ObsidianClient, port: number) {
           inputSchema: {
             type: 'object',
             properties: {
-              path: { type: 'string', description: 'Path to file' },
+              path: {
+                type: 'string',
+                description: 'Path to file'
+              },
             },
             required: ['path'],
           },
@@ -72,12 +84,18 @@ export function createHttpServer(client: ObsidianClient, port: number) {
           inputSchema: {
             type: 'object',
             properties: {
-              path: { type: 'string', description: 'Path to file' },
-              content: { type: 'string', description: 'File content' },
+              path: {
+                type: 'string',
+                description: 'Path to file'
+              },
+              content: {
+                type: 'string',
+                description: 'File content'
+              },
               mode: {
                 type: 'string',
                 enum: ['create', 'overwrite', 'append'],
-                description: 'Write mode',
+                description: 'Write mode (default: create)',
               },
             },
             required: ['path', 'content'],
@@ -89,10 +107,22 @@ export function createHttpServer(client: ObsidianClient, port: number) {
           inputSchema: {
             type: 'object',
             properties: {
-              query: { type: 'string', description: 'Search query' },
-              case_sensitive: { type: 'boolean', description: 'Case sensitive search' },
-              regex: { type: 'boolean', description: 'Use regex pattern' },
-              max_results: { type: 'number', description: 'Maximum results (default: 100)' },
+              query: {
+                type: 'string',
+                description: 'Search query'
+              },
+              case_sensitive: {
+                type: 'boolean',
+                description: 'Case sensitive search (default: false)'
+              },
+              regex: {
+                type: 'boolean',
+                description: 'Use regex pattern (default: false)'
+              },
+              max_results: {
+                type: 'number',
+                description: 'Maximum results (default: 100)'
+              },
             },
             required: ['query'],
           },
@@ -103,21 +133,36 @@ export function createHttpServer(client: ObsidianClient, port: number) {
           inputSchema: {
             type: 'object',
             properties: {
-              source: { type: 'string', description: 'Source path' },
-              destination: { type: 'string', description: 'Destination path' },
-              overwrite: { type: 'boolean', description: 'Overwrite if exists' },
+              source: {
+                type: 'string',
+                description: 'Source path'
+              },
+              destination: {
+                type: 'string',
+                description: 'Destination path'
+              },
+              overwrite: {
+                type: 'boolean',
+                description: 'Overwrite if exists (default: false)'
+              },
             },
             required: ['source', 'destination'],
           },
         },
         {
           name: 'delete_file',
-          description: 'Delete a file',
+          description: 'Delete a file (requires confirm: true)',
           inputSchema: {
             type: 'object',
             properties: {
-              path: { type: 'string', description: 'Path to file' },
-              confirm: { type: 'boolean', description: 'Confirm deletion (required)' },
+              path: {
+                type: 'string',
+                description: 'Path to file'
+              },
+              confirm: {
+                type: 'boolean',
+                description: 'Confirm deletion (required: must be true)'
+              },
             },
             required: ['path', 'confirm'],
           },
@@ -173,13 +218,13 @@ export function createHttpServer(client: ObsidianClient, port: number) {
 
   // Health check endpoint
   app.get('/health', (req: Request, res: Response) => {
-    res.json({ status: 'ok' });
+    res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  // MCP endpoint with StreamableHTTPServerTransport
+  // MCP endpoint - Streamable HTTP (stateless)
   app.post('/mcp', async (req: Request, res: Response) => {
     try {
-      // Create new transport per request to avoid ID collisions
+      // Create new transport per request (stateless pattern)
       const transport = new StreamableHTTPServerTransport({
         sessionIdGenerator: undefined,
         enableJsonResponse: true,

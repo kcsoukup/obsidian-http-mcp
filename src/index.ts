@@ -62,8 +62,8 @@ Add to ~/.claude.json:
 Server is ready!
   `);
 
-  app.listen(config.port, () => {
-    console.log(`\n✓ Server listening on port ${config.port}\n`);
+  app.listen(config.port, '0.0.0.0', () => {
+    console.log(`\n✓ Server listening on 0.0.0.0:${config.port} (accessible from WSL2)\n`);
   });
 }
 
