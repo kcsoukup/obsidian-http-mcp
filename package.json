@@ -1,0 +1,41 @@
+{
+  "name": "obsidian-http-mcp",
+  "version": "1.0.0",
+  "description": "First HTTP-native MCP server for Obsidian - Works with Claude Code CLI, Codex, Gemini without stdio bugs",
+  "main": "dist/index.js",
+  "type": "module",
+  "bin": {
+    "obsidian-http-mcp": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js"
+  },
+  "keywords": [
+    "obsidian",
+    "mcp",
+    "mcp-server",
+    "http-mcp",
+    "claude-code",
+    "codex",
+    "gemini",
+    "model-context-protocol",
+    "stdio-free",
+    "no-stdio"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@hono/node-server": "^1.19.6",
+    "@modelcontextprotocol/sdk": "^1.20.2",
+    "axios": "^1.13.1",
+    "dotenv": "^17.2.3",
+    "hono": "^4.10.4"
+  },
+  "devDependencies": {
+    "@types/node": "^24.9.2",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3"
+  }
+}
