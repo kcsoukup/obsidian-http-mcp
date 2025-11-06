@@ -20,9 +20,9 @@ First HTTP-native MCP server for Obsidian. Solves BrokenPipeError in 150+ stdio-
 
 ### Prerequisites
 
-1. **[Obsidian](https://obsidian.md/)** with [Local REST API plugin]
+1. **[Obsidian](https://obsidian.md/)** with [Local REST API plugin](https://github.com/coddingtonbear/obsidian-local-rest-api)
 2. **Node.js 18+** - [Download here](https://nodejs.org/)
-3. **Claude Code CLI**
+3. **[Claude Code CLI](https://claude.ai/code)**
 
 ### 1. Configure Obsidian Plugin
 
