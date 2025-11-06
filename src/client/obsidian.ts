@@ -88,4 +88,61 @@ export class ObsidianClient {
       return false;
     }
   }
+
+  async getFileInfo(path: string): Promise<{ size: number; modified: string }> {
+    this.validatePath(path);
+    const encoded = this.encodePath(path);
+
+    const response = await this.client.get(`/vault/${encoded}`, {
+      validateStatus: (status) => status === 200 || status === 404,
+    });
+
+    if (response.status === 404) {
+      throw new Error('File not found');
+    }
+
+    // Extract from headers (fallback if not available)
+    const size = parseInt(response.headers['content-length'] || '0', 10);
+    const modified = response.headers['last-modified'] || '';
+
+    return { size, modified };
+  }
+
+  async createDirectory(path: string): Promise<{ created: boolean }> {
+    this.validatePath(path);
+
+    // Force trailing slash for directory
+    const dirPath = path.endsWith('/') ? path : `${path}/`;
+    const encoded = this.encodePath(dirPath);
+
+    // Check if exists first
+    const exists = await this.directoryExists(dirPath);
+
+    if (!exists) {
+      // PUT empty content to create directory
+      await this.client.put(`/vault/${encoded}`, '', {
+        headers: { 'Content-Type': 'text/plain' },
+      });
+      return { created: true };
+    }
+
+    return { created: false };
+  }
+
+  async directoryExists(path: string): Promise<boolean> {
+    try {
+      const dirPath = path.endsWith('/') ? path : `${path}/`;
+      const encoded = this.encodePath(dirPath);
+      await this.client.get(`/vault/${encoded}`, {
+        validateStatus: (status) => status === 200 || status === 404,
+      });
+      return true;
+    } catch (error) {
+      // Only catch 404 (not found) - re-throw auth/server errors
+      if (error instanceof Error && error.message.includes('404')) {
+        return false;
+      }
+      throw error;
+    }
+  }
 }

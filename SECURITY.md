@@ -19,9 +19,10 @@ This MCP server is designed for **trusted network environments** (localhost, LAN
 
 ## Production Deployment Best Practices
 
-### ⚠️ DO NOT expose directly to the Internet without:
+### ⚠️ DO NOT expose directly to the Internet without
 
 1. **Reverse Proxy with Authentication**
+
    ```nginx
    location /mcp {
      auth_request /auth;
@@ -30,12 +31,14 @@ This MCP server is designed for **trusted network environments** (localhost, LAN
    ```
 
 2. **Rate Limiting**
+
    ```nginx
    limit_req_zone $binary_remote_addr zone=mcp:10m rate=10r/s;
    limit_req zone=mcp burst=20;
    ```
 
 3. **HTTPS Enforcement**
+
    ```nginx
    ssl_certificate /path/to/cert.pem;
    ssl_certificate_key /path/to/key.pem;
@@ -66,12 +69,14 @@ Internet → Cloudflare/CDN → Nginx (HTTPS + Auth + Rate Limit) → MCP Server
 ### Threat Model
 
 **In Scope**:
+
 - Path traversal attacks
 - ReDoS (Regular Expression Denial of Service)
 - API abuse via malformed inputs
 - Accidental data loss
 
 **Out of Scope** (User Responsibility):
+
 - Authentication/authorization
 - Rate limiting
 - HTTPS/TLS encryption
@@ -81,11 +86,13 @@ Internet → Cloudflare/CDN → Nginx (HTTPS + Auth + Rate Limit) → MCP Server
 ## Reporting a Vulnerability
 
 **DO**:
+
 - Email security issues to the maintainer (see GitHub profile)
 - Provide detailed reproduction steps
 - Allow 90 days for fix before public disclosure
 
 **DON'T**:
+
 - Open public GitHub issues for security vulnerabilities
 - Exploit vulnerabilities in production systems
 - Test on systems you don't own
@@ -124,11 +131,13 @@ Before deploying to production:
 ### v1.0 (2025-11-04)
 
 **Fixed**:
+
 - Path traversal via URL encoding bypass
 - ReDoS potential with unbounded regex
 - Missing PORT validation
 
 **Outstanding** (Accepted Risk for Trusted Network Scope):
+
 - No built-in authentication (use reverse proxy)
 - No rate limiting (use nginx/cloudflare)
 - Binds to 0.0.0.0 (required for WSL2 compatibility)

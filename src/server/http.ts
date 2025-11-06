@@ -13,6 +13,8 @@ import { search } from '../tools/search.js';
 import { moveFile } from '../tools/move.js';
 import { deleteFile, deleteFolder } from '../tools/delete.js';
 import { findFiles } from '../tools/find.js';
+import { getFileInfo } from '../tools/fileinfo.js';
+import { createDirectory } from '../tools/directory.js';
 import type {
   ListDirArgs,
   ListFilesArgs,
@@ -23,6 +25,8 @@ import type {
   DeleteFileArgs,
   DeleteFolderArgs,
   FindFilesArgs,
+  GetFileInfoArgs,
+  CreateDirectoryArgs,
 } from '../types/tools.js';
 import { VERSION } from '../utils/version.js';
 
@@ -49,30 +53,30 @@ export function createHttpServer(client: ObsidianClient, port: number) {
       tools: [
         {
           name: 'list_dir',
-          description: 'List subdirectories in a path. IMPORTANT: Paths must end with / for directories (e.g., "BUSINESS/" not "BUSINESS")',
+          description: 'List subdirectories in a path. Returns only folder names (not files). IMPORTANT: Path must end with / (e.g., "BUSINESS/" not "BUSINESS")',
           inputSchema: {
             type: 'object',
             properties: {
               path: {
                 type: 'string',
-                description: 'Path to directory WITH trailing slash (e.g., "BUSINESS/" or "" for root)'
+                description: 'Directory path WITH trailing slash (e.g., "BUSINESS/" or "" for root). Required by Obsidian API.'
               },
             },
           },
         },
         {
           name: 'list_files',
-          description: 'List files in a directory. IMPORTANT: Directory paths must end with / (e.g., "Notes/" not "Notes")',
+          description: 'List files in a directory. Returns only files (not folders). IMPORTANT: Path must end with / (e.g., "Notes/" not "Notes")',
           inputSchema: {
             type: 'object',
             properties: {
               path: {
                 type: 'string',
-                description: 'Directory path WITH trailing slash (e.g., "Notes/" or "" for root)'
+                description: 'Directory path WITH trailing slash (e.g., "Notes/" or "" for root). Required by Obsidian API.'
               },
               extension: {
                 type: 'string',
-                description: 'Filter by extension (e.g., "md")'
+                description: 'Filter by extension without dot (e.g., "md" for markdown files)'
               },
             },
           },
@@ -93,22 +97,22 @@ export function createHttpServer(client: ObsidianClient, port: number) {
         },
         {
           name: 'write_file',
-          description: 'Create or update a file',
+          description: 'Create or update a file. Use mode=create for new files, mode=overwrite to replace existing, mode=append to add to end.',
           inputSchema: {
             type: 'object',
             properties: {
               path: {
                 type: 'string',
-                description: 'Path to file'
+                description: 'File path without trailing slash (e.g., "Notes/daily.md")'
               },
               content: {
                 type: 'string',
-                description: 'File content'
+                description: 'File content (markdown text)'
               },
               mode: {
                 type: 'string',
                 enum: ['create', 'overwrite', 'append'],
-                description: 'Write mode (default: create)',
+                description: 'create: fail if exists (safe), overwrite: replace file, append: add to end. Default: create',
               },
             },
             required: ['path', 'content'],
@@ -116,13 +120,13 @@ export function createHttpServer(client: ObsidianClient, port: number) {
         },
         {
           name: 'search',
-          description: 'Search for text across all files',
+          description: 'Search for text inside file contents recursively across entire vault. Use this to find files containing specific text (like grep).',
           inputSchema: {
             type: 'object',
             properties: {
               query: {
                 type: 'string',
-                description: 'Search query'
+                description: 'Text to search for in file contents (not filenames - use find_files for that)'
               },
               case_sensitive: {
                 type: 'boolean',
@@ -142,21 +146,21 @@ export function createHttpServer(client: ObsidianClient, port: number) {
         },
         {
           name: 'move_file',
-          description: 'Move or rename a file',
+          description: 'Move or rename a file. Works for both moving to different folder and renaming in same folder.',
           inputSchema: {
             type: 'object',
             properties: {
               source: {
                 type: 'string',
-                description: 'Source path'
+                description: 'Current file path (e.g., "Notes/old.md")'
               },
               destination: {
                 type: 'string',
-                description: 'Destination path'
+                description: 'New file path (e.g., "Archive/new.md")'
               },
               overwrite: {
                 type: 'boolean',
-                description: 'Overwrite if exists (default: false)'
+                description: 'Overwrite destination if exists (default: false, will fail if exists)'
               },
             },
             required: ['source', 'destination'],
@@ -228,6 +232,34 @@ export function createHttpServer(client: ObsidianClient, port: number) {
             required: ['query'],
           },
         },
+        {
+          name: 'get_file_info',
+          description: 'Get file metadata (size, modification date). Returns exists: false if file not found.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              path: {
+                type: 'string',
+                description: 'File path without trailing slash (e.g., "Notes/meeting.md")'
+              },
+            },
+            required: ['path'],
+          },
+        },
+        {
+          name: 'create_directory',
+          description: 'Create a new directory. Idempotent (returns success even if already exists). Does NOT create parent directories - they must exist first.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              path: {
+                type: 'string',
+                description: 'Directory path WITHOUT trailing slash (e.g., "Projects/AI" not "Projects/AI/"). Unlike list_dir/list_files, no trailing slash here.'
+              },
+            },
+            required: ['path'],
+          },
+        },
       ],
     };
   });
@@ -264,6 +296,12 @@ export function createHttpServer(client: ObsidianClient, port: number) {
         break;
       case 'find_files':
         result = await findFiles(client, (args || {}) as unknown as FindFilesArgs);
+        break;
+      case 'get_file_info':
+        result = await getFileInfo(client, (args || {}) as unknown as GetFileInfoArgs);
+        break;
+      case 'create_directory':
+        result = await createDirectory(client, (args || {}) as unknown as CreateDirectoryArgs);
         break;
       default:
         throw new Error(`Unknown tool: ${name}`);

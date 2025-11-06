@@ -49,3 +49,24 @@ export interface FindFilesArgs {
   fuzzy?: boolean;
   max_results?: number;
 }
+
+export interface GetFileInfoArgs {
+  path: string;
+}
+
+export interface FileInfoData {
+  path: string;
+  size: number;
+  modified: string;
+  exists: boolean;
+}
+
+export interface CreateDirectoryArgs {
+  path: string;
+}
+
+export interface CreateDirectoryData {
+  path: string;
+  created: boolean;
+  message: string;
+}

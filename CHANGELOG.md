@@ -1,0 +1,99 @@
+# Changelog
+
+All notable changes to Obsidian HTTP MCP.
+
+---
+
+## [1.0.1] - 2025-11-06
+
+### Added
+
+- `get_file_info` tool - Get file metadata (size, modified timestamp)
+- `create_directory` tool - Create vault directories with idempotent behavior
+
+### Fixed
+
+- Path validation in `get_file_info` - Rejects directory paths (trailing slash)
+- Error handling in `directoryExists()` - Correctly propagates 401/500 errors
+- Timestamp fallback in `getFileInfo()` - Returns empty string when header missing
+
+### Development Notes
+
+- 11 tools total (9 → 11)
+- +290 lines across 10 files
+- 3 bugs detected and fixed via code review
+- 1h40 dev time
+
+---
+
+## [1.0.0] - 2025-11-04
+
+### Added
+
+- HTTP-native MCP server using `StreamableHTTPServerTransport`
+- 9 core tools: list_dir, list_files, find_files, read_file, write_file, search, move_file, delete_file, delete_folder
+- Soft delete with `.trash-http-mcp/` directory
+- Fuzzy file search with 60s cache
+- CLI with environment variable support
+
+### Performance Improvements
+
+- Search 1000 files: 50s → 2-3s (96% faster via batched parallel reads)
+- Fuzzy matching 10k files: 500ms → 50ms (90% faster via filtered subset)
+- Delete operations: Protected from API throttling (20 concurrent max)
+
+### Security Hardening
+
+- Path traversal protection with URL decoding validation
+- ReDoS protection with 500 char query limit
+- SECURITY.md with deployment checklist
+
+### Code Quality
+
+- TypeScript strict mode with typed interfaces (removed all `as any` casts)
+- Batch processing utility for concurrent operations
+- Single source of truth for version (package.json import)
+- PORT validation (1-65535 range check)
+
+### Development Notes
+
+- +408 lines across 20 files
+- 2h45 dev time
+
+---
+
+## [0.9.0] - 2025-11-02
+
+### Added (Pre-release)
+
+- Smart file search with fuzzy matching
+- Recursive vault scanning
+- Emoji support in filenames via URL encoding
+- 60s cache for file listings
+
+---
+
+## Architecture Notes
+
+**Problem Solved**: 150+ stdio-based Obsidian MCP servers fail with BrokenPipeError (Claude Code CLI bug #3071)
+
+**Solution**: First HTTP-native MCP server for Obsidian using official SDK
+
+**Flow**:
+
+```text
+Claude Code CLI → HTTP (POST /mcp) → Express + MCP SDK → Obsidian REST API (port 27123)
+```
+
+**Key Decisions**:
+
+- Stateless pattern (new transport per request)
+- Trailing slash requirement for directories (Obsidian API)
+- Batch processing to prevent API throttling
+- Soft delete by default for AI operation safety
+
+**Critical Points for Devs**:
+
+1. **Trailing slash REQUIRED**: Directories must end with `/` (e.g., `BUSINESS/`), files must not (e.g., `note.md`)
+2. **Accept header**: MCP SDK requires `Accept: application/json, text/event-stream`
+3. **Cross-platform**: WSL2 requires `0.0.0.0` binding, reinstall `node_modules` after platform switch

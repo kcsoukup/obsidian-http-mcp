@@ -1,6 +1,6 @@
 # Obsidian HTTP MCP Server - Roadmap
 
-**Last Updated**: 2025-11-03
+**Last Updated**: 2025-11-06
 
 ---
 
@@ -19,7 +19,7 @@
 
 ## 📅 Release Timeline
 
-### v1.0 - MVP ✅ COMPLETED
+### v1.0 - MVP ✅ COMPLETED (2025-11-03)
 
 **Goal**: Launch with core features, 0 bugs
 
@@ -35,7 +35,7 @@
 - ✅ **Type safety** (removed all `as any` casts)
 - ✅ **Code quality** (PORT validation, version management, batch processing)
 
-**Status**: Ready for npm publish
+**Status**: Published to npm
 
 **Performance Benchmarks**:
 - Search 1000 files: 50s → 2-3s (96% faster)
@@ -44,7 +44,31 @@
 
 ---
 
-### v1.0.1 - Multi-vault Support (Day 2-3) 🔥 PRIORITY
+### v1.0.1 - Core Tools Extension ✅ COMPLETED (2025-11-06)
+
+**Goal**: Add essential filesystem metadata tools
+
+**Features**:
+
+- ✅ `get_file_info` tool - File metadata (size, modified timestamp)
+- ✅ `create_directory` tool - Create vault directories
+- ✅ **Security fixes**: Path validation, error handling improvements
+- ✅ **Code review**: All bugs identified and fixed
+
+**Changes**:
+
+- 9 tools → 11 tools
+- Fixed path traversal validation in `get_file_info`
+- Fixed error propagation in `directoryExists()` (401/500 now throw correctly)
+- Fixed timestamp fallback (empty string instead of current time)
+
+**Timeline**: 1 day
+
+**Status**: Ready for npm publish
+
+---
+
+### v1.1 - Multi-vault Support 🔥 NEXT PRIORITY
 
 **Goal**: Support multiple vaults in single server instance
 
@@ -85,11 +109,11 @@ read_file({ vault: "work", path: "meeting.md" })
 
 **Effort**: ~150 lines, 5 files modified
 
-**Timeline**: Day 2-3
+**Timeline**: 2-3 days
 
 ---
 
-### v1.1 - Production Hardening & UX Polish (Week 2)
+### v1.2 - Production Hardening & UX Polish (Week 2)
 
 **Goal**: Security improvements + community-driven enhancements
 
@@ -121,7 +145,7 @@ read_file({ vault: "work", path: "meeting.md" })
 
 ---
 
-### v1.2 - Quality & Testing (Week 3-4)
+### v1.3 - Quality & Testing (Week 3-4)
 
 **Goal**: Production-ready reliability
 
@@ -211,9 +235,9 @@ read_file({ vault: "work", path: "meeting.md" })
 
 ## 🚧 Known Limitations
 
-### Current Limitations (v1.0)
+### Current Limitations (v1.0.1)
 
-1. **Single vault only** - One Obsidian instance per server (fixed in v1.0.1)
+1. **Single vault only** - One Obsidian instance per server (will be fixed in v1.1)
 2. **Text search only** - No semantic/AI-powered search (by design for simplicity)
 3. **No real-time sync** - Client must re-query for updates (HTTP limitation)
 

@@ -1,7 +1,7 @@
 # Technical Specification: Obsidian HTTP MCP Server
 
-**Version**: 1.0  
-**Last Updated**: 2025-11-02
+**Version**: 1.0.1
+**Last Updated**: 2025-11-06
 
 ---
 
@@ -42,14 +42,17 @@
 │  └────────┬───────────────────────┘  │
 │           │                           │
 │  ┌────────▼───────────────────────┐  │
-│  │  Tool Executor                 │  │
+│  │  Tool Executor (11 tools)      │  │
 │  │  - list_dir                    │  │
 │  │  - list_files                  │  │
 │  │  - read_file                   │  │
 │  │  - write_file                  │  │
 │  │  - search                      │  │
 │  │  - move_file                   │  │
-│  │  - delete_file                 │  │
+│  │  - delete_file/delete_folder   │  │
+│  │  - find_files                  │  │
+│  │  - get_file_info               │  │
+│  │  - create_directory            │  │
 │  └────────┬───────────────────────┘  │
 │           │                           │
 │  ┌────────▼───────────────────────┐  │
@@ -99,12 +102,14 @@ obsidian-http-mcp/
 │   │   ├── write.ts          # write_file
 │   │   ├── search.ts         # search (batched parallel)
 │   │   ├── move.ts           # move_file
-│   │   └── delete.ts         # delete_file + delete_folder (batched)
+│   │   ├── delete.ts         # delete_file + delete_folder (batched)
+│   │   ├── fileinfo.ts       # get_file_info (metadata)
+│   │   └── directory.ts      # create_directory
 │   │
 │   ├── types/
 │   │   ├── index.ts          # Core types (Config, ToolResult, SearchMatch)
 │   │   ├── search.ts         # Search-specific types (FileMatch, SearchOptions)
-│   │   └── tools.ts          # Tool argument interfaces (9 tools)
+│   │   └── tools.ts          # Tool argument interfaces (11 tools)
 │   │
 │   └── utils/
 │       ├── config.ts         # Configuration loader (with PORT validation)
@@ -540,6 +545,93 @@ obsidian-http-mcp/
 
 ---
 
+#### 10. `get_file_info`
+
+**Description**: Get file metadata (size, modification date). Returns `exists: false` if file not found. IMPORTANT: Only works for files, not directories.
+
+**Input**:
+
+```typescript
+{
+  path: string;  // Required - File path WITHOUT trailing slash (e.g., "Notes/meeting.md")
+}
+```
+
+**Output**:
+
+```typescript
+{
+  path: string;
+  size: number;           // File size in bytes
+  modified: string;       // ISO 8601 timestamp (empty string if unavailable)
+  exists: boolean;        // false if file not found
+}
+```
+
+**Obsidian API Calls**: `GET /vault/{path}` (reads headers: `Content-Length`, `Last-Modified`)
+
+**Trade-off**:
+
+- GET downloads full file content (Obsidian API doesn't support HEAD requests)
+- Acceptable for markdown files (typically < 100KB)
+- Use with caution on large files (images, PDFs)
+
+**Validation**:
+
+- Rejects paths with trailing slash (returns error directing user to `list_dir`)
+- Returns `exists: false` instead of error if file not found
+
+**Use Case**: Check file metadata before expensive operations, verify file existence without reading content.
+
+---
+
+#### 11. `create_directory`
+
+**Description**: Create a new directory in vault. Idempotent (safe to call if already exists). Does NOT create parent directories automatically.
+
+**Input**:
+
+```typescript
+{
+  path: string;  // Required - Directory path WITHOUT trailing slash (e.g., "BUSINESS/AI" not "BUSINESS/AI/")
+}
+```
+
+**Output**:
+
+```typescript
+{
+  path: string;
+  created: boolean;       // false if directory already existed
+  message: string;        // Human-readable status message
+}
+```
+
+**Obsidian API Calls**:
+
+1. Check existence: `GET /vault/{path}/`
+2. Create if missing: `PUT /vault/{path}/` (empty content)
+
+**Behavior**:
+
+- **Idempotent**: Returns `created: false` if directory already exists (not an error)
+- **No recursive creation**: If parent directories missing, operation fails with error
+- **Validation**: Rejects paths with trailing slash in user input (server adds it internally)
+
+**Error Handling**:
+
+- Auth/server errors (401, 500) propagate correctly (not masked as "not found")
+- Only 404 errors treated as "directory doesn't exist"
+
+**Limitations**:
+
+- MVP design: No automatic parent creation (user must create recursively)
+- Prevents accidental deep folder structures
+
+**Use Case**: Organize vault structure, create project folders before adding notes.
+
+---
+
 ## 🔐 Security Considerations
 
 ### API Key Handling
@@ -572,11 +664,13 @@ obsidian-http-mcp/
 **Scope**: Designed for **trusted network environments** (localhost, LAN, VPN)
 
 **Known Limitations**:
+
 - No built-in authentication (expects reverse proxy)
 - No rate limiting (expects nginx/cloudflare)
 - Binds to `0.0.0.0` by default (required for WSL2 ↔ Windows)
 
 **Production Requirements**:
+
 - Reverse proxy with authentication (bearer token/OAuth)
 - HTTPS/TLS termination
 - Rate limiting configuration
@@ -601,6 +695,8 @@ See [SECURITY.md](./SECURITY.md) for full deployment checklist.
 | delete_file | < 100ms | ~80ms | Soft delete (3 calls) or hard delete (1 call) |
 | delete_folder | N/A | **Batched (20 concurrent)** | Prevents API throttling |
 | find_files | < 100ms | ~10ms (cached) | 60s cache, fuzzy optimized |
+| get_file_info | < 50ms | ~30ms | GET headers (downloads content) |
+| create_directory | < 100ms | ~60ms | Check existence + PUT |
 
 ### Performance Optimizations (v1.0)
 
@@ -633,10 +729,12 @@ See [SECURITY.md](./SECURITY.md) for full deployment checklist.
 - **Large vault** (5000+ files): Search 10-30s (batched)
 
 **Bottlenecks** (v1.0):
+
 - Search still CPU-bound (sequential file reads within batches)
 - Large vault search limited by Obsidian API latency (~50ms per file)
 
 **Future optimization** (v2.1):
+
 - WebSocket streaming for large searches
 - Server-side indexing (optional SQLite cache)
 - Parallel batch processing across multiple workers
@@ -744,5 +842,22 @@ See [CONFIGURATION.md](./CONFIGURATION.md) for cross-platform troubleshooting (W
 
 ---
 
+## 📋 Changelog
+
+### v1.0.1 (2025-11-06)
+
+**Added**:
+
+- `get_file_info` tool: File metadata (size, modified timestamp)
+- `create_directory` tool: Create vault directories
+
+**Security Fixes**:
+
+- Fixed path validation in `get_file_info` (reject directory paths)
+- Fixed error handling in `directoryExists()` (only catch 404, propagate 401/500)
+- Fixed timestamp fallback (empty string instead of current time)
+
+---
+
 **Maintained by**: Claude (AI Assistant)
-**Last Review**: 2025-11-02
+**Last Review**: 2025-11-06

@@ -107,9 +107,9 @@ claude
 
 ## 🛠️ Features
 
-### MCP Tools
+### MCP Tools (11 total)
 
-**Coming soon (v1.0.1)**: Multi-vault support. See [ROADMAP.md](./ROADMAP.md)
+**Coming soon (v1.1)**: Multi-vault support. See [ROADMAP.md](./ROADMAP.md)
 
 | Tool | Description | Example |
 |------|-------------|---------|
@@ -122,6 +122,8 @@ claude
 | `delete_file` | Delete note (soft delete) | Delete draft |
 | `delete_folder` | Delete folder recursively | Delete archive folder |
 | `find_files` | Search files by name (fuzzy) | Find files about "meeting" |
+| `get_file_info` | Get file metadata (size, date) | Check note file size |
+| `create_directory` | Create new folder | Create /Projects/AI folder |
 
 ### Smart File Search
 
