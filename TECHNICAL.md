@@ -1,7 +1,7 @@
 # Technical Specification: Obsidian HTTP MCP Server
 
-**Version**: 1.0.1
-**Last Updated**: 2025-11-06
+**Version**: 1.0.2
+**Last Updated**: 2025-01-06
 
 ---
 
@@ -160,6 +160,50 @@ obsidian-http-mcp/
 - **Node.js**: 18.0.0 or higher
 - **npm**: 9.0.0 or higher
 - **OS**: Linux, macOS, Windows (native or WSL2)
+
+### Configuration Management (v1.0.2+)
+
+**Config Priority Chain**:
+
+1. **CLI arguments** (highest priority): `--api-key`, `--base-url`, `--port`
+2. **Environment variables**: `OBSIDIAN_API_KEY`, `OBSIDIAN_BASE_URL`, `PORT`
+3. **Config file**: `~/.obsidian-mcp/config.json`
+4. **`.env` file** (lowest priority, backward compatibility)
+
+**Persistent Config Storage**:
+
+- Location: `~/.obsidian-mcp/config.json`
+- Created via: `obsidian-http-mcp --setup` (interactive wizard)
+- Permissions: 0600 (owner read/write only) on Linux/Mac
+- Format:
+  ```json
+  {
+    "apiKey": "your-api-key-here",
+    "baseUrl": "http://127.0.0.1:27123",
+    "port": 3000
+  }
+  ```
+
+**First-time Setup Workflow**:
+
+```bash
+obsidian-http-mcp --setup
+# Enter API key when prompted
+# Accept defaults or customize URL/port
+# Config saved to ~/.obsidian-mcp/config.json
+
+# Then just:
+obsidian-http-mcp
+# No need to type API key again
+```
+
+**Implementation Details** (v1.0.2):
+
+- `src/utils/config.ts`: Config file loading with validation
+- `src/cli.ts`: Interactive setup wizard via readline
+- `src/index.ts`: Setup handler before server start
+- Zero new dependencies (Node.js built-ins only)
+- 150 lines added across 3 files
 
 ### Network Configuration
 
@@ -844,6 +888,26 @@ See [CONFIGURATION.md](./CONFIGURATION.md) for cross-platform troubleshooting (W
 
 ## 📋 Changelog
 
+### v1.0.2 (2025-01-06)
+
+**Added**:
+
+- Persistent config storage in `~/.obsidian-mcp/config.json` (0600 permissions)
+- Interactive setup wizard via `--setup` flag
+- Config priority chain: CLI args > env vars > config.json > .env > defaults
+
+**Changed**:
+
+- Improved error messages suggesting `--setup` when config missing
+- Updated CLI help text with config priority documentation
+
+**Development Notes**:
+
+- +150 lines across 3 files (config.ts, cli.ts, index.ts)
+- Zero new dependencies (Node.js built-ins only)
+- Backward compatible with .env files
+- 9/9 tests passing (unit + integration + live MCP)
+
 ### v1.0.1 (2025-11-06)
 
 **Added**:
@@ -860,4 +924,4 @@ See [CONFIGURATION.md](./CONFIGURATION.md) for cross-platform troubleshooting (W
 ---
 
 **Maintained by**: Claude (AI Assistant)
-**Last Review**: 2025-11-06
+**Last Review**: 2025-01-06

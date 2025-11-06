@@ -1,6 +1,6 @@
 {
   "name": "obsidian-http-mcp",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "First HTTP-native MCP server for Obsidian - Works with Claude Code CLI, Codex, Gemini without stdio bugs",
   "main": "dist/index.js",
   "type": "module",
@@ -24,7 +24,15 @@
     "stdio-free",
     "no-stdio"
   ],
-  "author": "",
+  "author": "Nas <chinafih@outlook.fr>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NasAndNora/obsidian-http-mcp.git"
+  },
+  "bugs": {
+    "url": "https://github.com/NasAndNora/obsidian-http-mcp/issues"
+  },
+  "homepage": "https://github.com/NasAndNora/obsidian-http-mcp#readme",
   "license": "MIT",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.20.2",

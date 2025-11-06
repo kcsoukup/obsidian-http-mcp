@@ -4,208 +4,188 @@
 
 [![npm version](https://badge.fury.io/js/obsidian-http-mcp.svg)](https://www.npmjs.com/package/obsidian-http-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![GitHub](https://img.shields.io/github/stars/NasAndNora/obsidian-http-mcp?style=social)](https://github.com/NasAndNora/obsidian-http-mcp)
 
-## Quick Facts
+## Why This Exists
 
-**Problem**: BrokenPipeError in 150+ stdio-based Obsidian MCP servers ([Claude Code CLI bug #3071](https://github.com/anthropics/claude-code/issues/3071))
-**Solution**: First HTTP-native implementation (bypasses stdio completely)
-**Works With**: Claude Code CLI, Claude Desktop, Codex, Gemini
-**Performance**: <200ms response, 70% fewer API calls via intelligent cache
-**Install**: `npm install -g obsidian-http-mcp`
+First HTTP-native MCP server for Obsidian. Solves BrokenPipeError in 150+ stdio-based servers ([Claude Code CLI bug #3071](https://github.com/anthropics/claude-code/issues/3071)).
 
-## ⚠️ Security Notice
+**Works with**: Claude Code CLI, Claude Desktop, Codex, Gemini | **Performance**: <200ms response, 70% fewer API calls via intelligent cache
 
-**This server is designed for trusted network environments** (localhost, LAN, VPN).
-
-For production deployment:
-
-- Use a reverse proxy (nginx/caddy) with authentication
-- Enable HTTPS/TLS
-- Configure rate limiting
-- See [SECURITY.md](./SECURITY.md) for full deployment checklist
-
-**Current state**: Binds to `0.0.0.0` for cross-platform compatibility (WSL2 ↔ Windows). Do NOT expose directly to the Internet without proper security controls.
+---
 
 ## 🚀 Quick Start
 
+> **💡 New to the codebase?** Ask an AI assistant to guide you: *"Based on README.md and TECHNICAL.md, walk me through how the HTTP-native MCP server works"*
+
 ### Prerequisites
 
-1. **[Obsidian](https://obsidian.md/)** - The note-taking app
-2. **[Local REST API plugin](https://github.com/coddingtonbear/obsidian-local-rest-api)** - Install from Obsidian Community Plugins
-3. **Node.js** 18+ - [Download here](https://nodejs.org/)
-4. **npm** - Comes with Node.js
+1. **[Obsidian](https://obsidian.md/)** with [Local REST API plugin]
+2. **Node.js 18+** - [Download here](https://nodejs.org/)
+3. **Claude Code CLI**
 
-### Installation
+### 1. Configure Obsidian Plugin
+
+- Settings → Community Plugins → Search "Local REST API" → Enable
+- Enable "Non encrypted (HTTP) API"
+- **Copy the API key** (you'll need it next)
+
+### 2. Install & Setup (one-time)
 
 ```bash
 npm install -g obsidian-http-mcp
+obsidian-http-mcp --setup
+# Enter your Obsidian API key when prompted
+# Press Enter to accept defaults for URL and port
 ```
 
-### Configuration
+**Config saved to `~/.obsidian-mcp/config.json`** - you won't need to type this again.
 
-#### Step 1: Install & Configure Obsidian Plugin
-
-1. Open Obsidian → Settings → Community Plugins → Browse
-2. Search "Local REST API" → Install → Enable
-3. Settings → Local REST API:
-   - **Enable "Non encrypted (HTTP) API"** (required for localhost)
-   - Copy the API key
-   - Verify port 27123 is shown
-
-#### Step 2: Configure the server
-
-```powershell
-# Windows PowerShell
-Copy-Item .env.example .env
-notepad .env
-```
+### 3. Start Server
 
 ```bash
-# Linux/Mac
-cp .env.example .env
-nano .env
+obsidian-http-mcp
 ```
 
-Your `.env` should look like:
+**⚠️ Keep this terminal running.** Restart after reboot to use the MCP server.
 
-```env
-OBSIDIAN_API_KEY=your_actual_api_key_here
-OBSIDIAN_BASE_URL=http://127.0.0.1:27123
-PORT=3000
-```
+### 4. Connect Claude CLI (one-time setup)
 
-#### Step 3: Start the server
+**Same machine (all Windows or all Linux):**
 
 ```bash
-npm run dev
-# Server will start on http://localhost:3000
-```
-
-#### Step 4: Connect Claude Code CLI
-
-```bash
-# Add HTTP MCP server
 claude mcp add --transport http obsidian http://localhost:3000/mcp
 ```
 
-#### Step 5: Test the connection
+**Cross-platform (Claude on WSL2, Obsidian on Windows):**
+
+```bash
+claude mcp add --transport http obsidian http://172.19.32.1:3000/mcp
+```
+
+Verify:
 
 ```bash
 claude mcp list
 # Should show: obsidian: http://localhost:3000/mcp (HTTP) - ✓ Connected
 ```
 
-#### Step 6: Use with Claude Code CLI/codex or any other ClI
-
-Start a conversation and your MCP tools will be available:
+### 5. Use with Claude
 
 ```bash
 claude
-# Tools are accessible via /mcp command
-# Or Claude will automatically suggest them based on your requests
+# Try: "Show me all notes in my Projects folder"
 ```
+
+**That's it!** Claude will automatically connect to the server every time you start a conversation (as long as the server is running).
+
+---
 
 ## 🛠️ Features
 
-### MCP Tools (11 total)
+**11 MCP Tools**: File operations (read/write/move/delete), search, fuzzy find, directory management
 
-**Coming soon (v1.1)**: Multi-vault support. See [ROADMAP.md](./ROADMAP.md)
+**Smart File Search**: Fuzzy matching with typo tolerance, emoji support, 60s cache - solves the problem where Claude cannot guess exact filenames
 
-| Tool | Description | Example |
-|------|-------------|---------|
-| `list_dir` | List directories in vault | List all folders |
-| `list_files` | List files in a directory | Get notes in /Projects |
-| `read_file` | Read note content | Read daily note |
-| `write_file` | Create or update note | Create meeting note |
-| `search` | Grep-like search recursively | Find "todo" across notes |
-| `move_file` | Move/rename notes | Move note to archive |
-| `delete_file` | Delete note (soft delete) | Delete draft |
-| `delete_folder` | Delete folder recursively | Delete archive folder |
-| `find_files` | Search files by name (fuzzy) | Find files about "meeting" |
-| `get_file_info` | Get file metadata (size, date) | Check note file size |
-| `create_directory` | Create new folder | Create /Projects/AI folder |
+**Safe Deletion**: Soft delete to `.trash-http-mcp/` by default (protects against accidental AI operations)
 
-### Smart File Search
+**Coming in v1.1**: Multi-vault support - see [ROADMAP.md](./ROADMAP.md)
 
-Solves the problem where Claude cannot guess exact filenames (especially with emojis/special characters). The `find_files` tool uses fuzzy matching to discover files before reading them.
+See [TECHNICAL.md](./TECHNICAL.md) for complete tool specifications and architecture details.
 
-**Features**: Recursive vault scan, typo tolerance, emoji support, intelligent cache
+---
 
-### Safe File Deletion
-
-**Soft delete by default** - files moved to `.trash-http-mcp/` instead of permanent deletion. Protects against accidental AI operations. Recovery: open trash folder in Obsidian and move files back. Set `permanent: true` for irreversible deletion.
-
-## 📖 Usage Examples
-
-### With Claude Code CLI
+## 📖 Command Line Options
 
 ```bash
-# Ask Claude to list your notes
-"Show me all notes in my Projects folder"
+obsidian-http-mcp --help
 
-# Search across vault
-"Find all mentions of 'AI' in my notes"
+Options:
+  --setup              Interactive setup (saves to ~/.obsidian-mcp/config.json)
+  --api-key <key>      Obsidian REST API key (overrides config)
+  --base-url <url>     Obsidian REST API URL (default: http://127.0.0.1:27123)
+  --port <port>        Server port (default: 3000)
+  --help, -h           Show help
+  --version, -v        Show version
 
-# Create a note
-"Create a meeting note for today in /Meetings"
+Config Priority:
+  1. CLI arguments (--api-key, --base-url, --port)
+  2. Environment variables (OBSIDIAN_API_KEY, OBSIDIAN_BASE_URL, PORT)
+  3. Config file (~/.obsidian-mcp/config.json)
+  4. .env file
 ```
 
-### Advanced: Command Line Arguments
+**Alternative: Using .env file**:
 
-If you prefer command-line arguments over `.env`:
+1. Create `.env` with `OBSIDIAN_API_KEY=your_key`
+2. Run: `obsidian-http-mcp`
+
+---
+
+## 🔧 Troubleshooting
+
+### WSL2: Connection refused
+
+**Find your bridge IP:**
 
 ```bash
-obsidian-http-mcp --api-key YOUR_KEY --port 3000
+cat /etc/resolv.conf | grep nameserver
+# Use the IP shown (usually 172.19.32.1)
 ```
 
-See `obsidian-http-mcp --help` for all options.
+Then reconnect:
 
-## 🏗️ Architecture
-
-```text
-┌─────────────────┐
-│  Claude Code    │
-│      CLI        │
-└────────┬────────┘
-         │ HTTP (StreamableHTTP - MCP 2025-03-26)
-         ↓
-┌──────────────────────────────┐
-│  Obsidian HTTP MCP Server    │ (This project)
-│                              │
-│  Express + MCP SDK           │
-│  StreamableHTTPServerTransport│
-│  Port 3000                   │
-└────────┬─────────────────────┘
-         │ REST API
-         ↓
-┌─────────────────┐
-│   Obsidian      │
-│  Local REST API │
-│   Port 27123    │
-└─────────────────┘
+```bash
+claude mcp add --transport http obsidian http://YOUR_IP:3000/mcp
 ```
 
-## 🔧 Advanced Configuration
+### Windows Firewall blocks WSL2
 
-Running on Windows/WSL2? Multiple configuration options available:
+```powershell
+# Run as Admin
+New-NetFirewallRule -DisplayName "MCP Server" -Direction Inbound -LocalPort 3000 -Protocol TCP -Action Allow
+```
 
-- All on Windows
-- Server on Windows + CLI on WSL2
-- Server on WSL2 + CLI on WSL2
+### Port already in use
 
-See [CONFIGURATION.md](./CONFIGURATION.md) for detailed setup instructions and troubleshooting.
+```bash
+obsidian-http-mcp --api-key YOUR_KEY --port 3001
+```
+
+**Need more help?** See [CONFIGURATION.md](./CONFIGURATION.md) for detailed cross-platform setup guides and network architecture.
+
+---
+
+## ⚠️ Security Notice
+
+**Designed for trusted networks** (localhost, LAN, VPN). For production deployment:
+
+- Use reverse proxy (nginx/caddy) with authentication
+- Enable HTTPS/TLS
+- Configure rate limiting
+- See [SECURITY.md](./SECURITY.md) for full checklist
+
+**Current state**: Binds to `0.0.0.0` for cross-platform compatibility (WSL2 ↔ Windows). Do NOT expose directly to the Internet.
+
+---
 
 ## 🤝 Contributing
 
-See [CONTRIBUTING.md](./CONTRIBUTING.md)
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for development setup and guidelines.
+
+---
 
 ## 📝 License
 
 MIT - See [LICENSE](./LICENSE)
 
+---
+
 ## 🌟 Support
 
 If this project helps you, please star it on GitHub!
+
+---
 
 ## 🔗 Related
 
@@ -215,4 +195,4 @@ If this project helps you, please star it on GitHub!
 
 ---
 
-## Built with ❤️ for the Obsidian + AI community
+Built with ❤️ for the Obsidian + AI community

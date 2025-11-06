@@ -4,9 +4,31 @@ All notable changes to Obsidian HTTP MCP.
 
 ---
 
-## [1.0.1] - 2025-11-06
+## [1.0.2] - 2025-01-06
 
 ### Added
+
+- Persistent config storage in `~/.obsidian-mcp/config.json` (0600 permissions)
+- Interactive setup wizard via `--setup` flag
+- Config priority chain: CLI args > env vars > config.json > .env > defaults
+
+### Changed
+
+- Improved error messages suggesting `--setup` when config missing
+- Updated help text with config priority documentation
+
+### Development Notes (1.0.2)
+
+- +150 lines across 3 files (config.ts, cli.ts, index.ts)
+- Zero new dependencies (Node.js built-ins only)
+- Backward compatible with .env files and CLI args
+- 9/9 tests passing
+
+---
+
+## [1.0.1] - 2025-11-06
+
+### Added in 1.0.1
 
 - `get_file_info` tool - Get file metadata (size, modified timestamp)
 - `create_directory` tool - Create vault directories with idempotent behavior
@@ -17,7 +39,7 @@ All notable changes to Obsidian HTTP MCP.
 - Error handling in `directoryExists()` - Correctly propagates 401/500 errors
 - Timestamp fallback in `getFileInfo()` - Returns empty string when header missing
 
-### Development Notes
+### Development Notes (1.0.1)
 
 - 11 tools total (9 → 11)
 - +290 lines across 10 files
@@ -28,7 +50,7 @@ All notable changes to Obsidian HTTP MCP.
 
 ## [1.0.0] - 2025-11-04
 
-### Added
+### Added in 1.0.0
 
 - HTTP-native MCP server using `StreamableHTTPServerTransport`
 - 9 core tools: list_dir, list_files, find_files, read_file, write_file, search, move_file, delete_file, delete_folder
@@ -55,7 +77,7 @@ All notable changes to Obsidian HTTP MCP.
 - Single source of truth for version (package.json import)
 - PORT validation (1-65535 range check)
 
-### Development Notes
+### Development Notes (1.0.0)
 
 - +408 lines across 20 files
 - 2h45 dev time
@@ -64,7 +86,7 @@ All notable changes to Obsidian HTTP MCP.
 
 ## [0.9.0] - 2025-11-02
 
-### Added (Pre-release)
+### Added in 0.9.0 (Pre-release)
 
 - Smart file search with fuzzy matching
 - Recursive vault scanning

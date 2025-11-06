@@ -18,18 +18,26 @@ async function main() {
     process.exit(0);
   }
 
+  // Handle --setup flag
+  if (cliArgs.setup) {
+    const { runSetup } = await import('./cli.js');
+    await runSetup();
+    process.exit(0);
+  }
+
   // Load config from env + CLI overrides
   let config;
   try {
     config = loadConfig();
   } catch (error) {
     console.error('Error loading config:', error instanceof Error ? error.message : error);
-    console.error('\nRun with --help for usage information');
+    console.error('\nRun "obsidian-http-mcp --setup" to configure, or --help for usage information');
     process.exit(1);
   }
 
-  // CLI args override env vars
+  // CLI args override env vars (and config file)
   if (cliArgs.apiKey) config.apiKey = cliArgs.apiKey;
+  if (cliArgs.baseUrl) config.baseUrl = cliArgs.baseUrl;
   if (cliArgs.port) config.port = cliArgs.port;
 
   // Create Obsidian client
