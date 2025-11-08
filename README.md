@@ -100,6 +100,22 @@ claude
 
 ---
 
+## 🔄 Updating
+
+To update to the latest version:
+
+```bash
+npm install -g obsidian-http-mcp@latest
+```
+
+After updating, restart the server:
+
+```bash
+obsidian-http-mcp
+```
+
+---
+
 ## 🛠️ Features
 
 **11 MCP Tools**: File operations (read/write/move/delete), search, fuzzy find, directory management

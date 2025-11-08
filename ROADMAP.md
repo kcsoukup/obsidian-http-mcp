@@ -91,7 +91,110 @@
 
 ---
 
-### v1.1 - Multi-vault Support 🔥 NEXT PRIORITY
+### v1.1 - Token Optimization Tools 🔥 NEXT PRIORITY
+
+**Goal**: Drastically reduce token usage for file operations
+
+**Why**: Current approach requires reading + overwriting entire files (even for small edits), wasting 95%+ tokens
+
+---
+
+#### Feature 1: `edit_file` tool
+
+Smart editing with old_string/new_string pattern (like native Claude Code Edit tool)
+
+**API**:
+```typescript
+edit_file({ path: string, old_string: string, new_string: string, replace_all?: boolean })
+```
+
+**Returns**: Diff output only (not full file)
+
+**Token impact**: ~98% reduction (example: 300-line file edit = 200 tokens instead of 10,000)
+
+---
+
+#### Feature 2: Partial `read_file`
+
+Read specific line ranges instead of entire file
+
+**API**:
+```typescript
+read_file({ path: string, offset?: number, limit?: number })
+```
+
+**Token impact**: ~94% reduction (example: read 20 lines from 300-line file = 300 tokens instead of 5,000)
+
+---
+
+#### Feature 3: Enhanced `search`
+
+Add path filter and context_lines control
+
+**API**:
+```typescript
+search({ query: string, path?: string, context_lines?: number, ... })
+```
+
+**Token impact**: ~98% reduction when targeting specific file (example: find text in file = 100 tokens instead of 5,000)
+
+---
+
+**Implementation**: ~200 lines, 5 files modified
+
+**Backward compatible**: All existing tools unchanged when new parameters omitted
+
+---
+
+### v1.2 - Production Hardening & UX Polish
+
+**Goal**: Security improvements + community-driven enhancements
+
+**Security Features** (Optional - for production deployments):
+
+- [ ] Optional bearer token authentication middleware
+- [ ] Rate limiting configuration (express-rate-limit)
+- [ ] HTTPS enforcement option
+- [ ] Audit logging for sensitive operations
+- [ ] Configurable host binding (127.0.0.1 vs 0.0.0.0)
+
+**UX Features**:
+
+- [ ] Auto-detect Obsidian REST API URL (check ports 27123/27124)
+- [ ] `--debug` flag for verbose logs
+- [ ] Better error messages (sanitize paths, add suggestions)
+- [ ] Health check improvements
+
+**User-driven features** (wait for >3 requests):
+
+- Frontmatter tools (`get_frontmatter`, `set_frontmatter`)
+- Tag tools (`add_tags`, `remove_tags`, `list_tags`)
+- Template support
+- Graph tools (backlinks)
+
+**Note**: Security features are optional add-ons for users who need public deployment. Current scope (trusted network) remains unchanged.
+
+---
+
+### v1.3 - Quality & Testing
+
+**Goal**: Production-ready reliability
+
+**Features**:
+
+- [ ] Unit test suite (tools only)
+- [ ] CI/CD pipeline (GitHub Actions)
+- [ ] Docker support (optional deployment)
+- [ ] Performance benchmarks
+
+**Nice-to-have** (if time permits):
+
+- Interactive setup wizard
+- Web UI for testing (localhost:3000/ui)
+
+---
+
+### v2.0 - Multi-vault Support
 
 **Goal**: Support multiple vaults in single server instance
 
@@ -118,7 +221,7 @@ PORT=3000
 4. All tools - Add optional `vault` parameter (default to first vault)
 5. `http.ts` - Pass vault to tools
 
-### Usage
+**Usage**:
 
 ```typescript
 // Single vault (no vault param needed)
@@ -132,63 +235,9 @@ read_file({ vault: "work", path: "meeting.md" })
 
 **Effort**: ~150 lines, 5 files modified
 
-**Timeline**: 2-3 days
-
 ---
 
-### v1.2 - Production Hardening & UX Polish (Week 2)
-
-**Goal**: Security improvements + community-driven enhancements
-
-**Security Features** (Optional - for production deployments):
-
-- [ ] Optional bearer token authentication middleware
-- [ ] Rate limiting configuration (express-rate-limit)
-- [ ] HTTPS enforcement option
-- [ ] Audit logging for sensitive operations
-- [ ] Configurable host binding (127.0.0.1 vs 0.0.0.0)
-
-**UX Features**:
-
-- [ ] Auto-detect Obsidian REST API URL (check ports 27123/27124)
-- [ ] `--debug` flag for verbose logs
-- [ ] Better error messages (sanitize paths, add suggestions)
-- [ ] Health check improvements
-
-**User-driven features** (wait for >3 requests):
-
-- Frontmatter tools (`get_frontmatter`, `set_frontmatter`)
-- Tag tools (`add_tags`, `remove_tags`, `list_tags`)
-- Template support
-- Graph tools (backlinks)
-
-**Timeline**: Community-driven
-
-**Note**: Security features are optional add-ons for users who need public deployment. Current scope (trusted network) remains unchanged.
-
----
-
-### v1.3 - Quality & Testing (Week 3-4)
-
-**Goal**: Production-ready reliability
-
-**Features**:
-
-- [ ] Unit test suite (tools only)
-- [ ] CI/CD pipeline (GitHub Actions)
-- [ ] Docker support (optional deployment)
-- [ ] Performance benchmarks
-
-**Nice-to-have** (if time permits):
-
-- Interactive setup wizard
-- Web UI for testing (localhost:3000/ui)
-
-**Timeline**: 2 weeks
-
----
-
-### v2.0 - Community Features (Month 2+)
+### v2.1 - Community Features
 
 **Goal**: Implement most-requested features
 
@@ -205,11 +254,9 @@ read_file({ vault: "work", path: "meeting.md" })
 - ~~Plugin mode~~ (different architecture, separate codebase)
 - ~~VS Code/Raycast extensions~~ (out of scope)
 
-**Timeline**: Community-driven
-
 ---
 
-### v2.1 - Performance Optimization (Month 3)
+### v2.2 - Performance Optimization
 
 **Goal**: Optimize for large vaults (5000+ notes)
 
@@ -221,8 +268,6 @@ read_file({ vault: "work", path: "meeting.md" })
 - [ ] Request queuing
 
 **Note**: In-memory cache already exists (60s TTL in find.ts)
-
-**Timeline**: Based on performance reports
 
 ---
 

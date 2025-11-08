@@ -65,8 +65,12 @@ lsof -ti:3000 | xargs kill -9
 
 # Windows
 netstat -ano | findstr :3000
-```
-taskkill /PID <PID> /F
+```powershell
+# Find the process ID (PID) first:
+netstat -ano | findstr :3000
+
+# Then kill the process (replace 1234 with actual PID):
+taskkill /PID 1234 /F
 ```
 
 ---
@@ -88,21 +92,25 @@ graph TD
 ```
 
 **Key points:**
+
 - Obsidian REST API only listens on `127.0.0.1:27123` (Windows localhost)
 - If MCP server ran on WSL2, it couldn't access Windows localhost
 - MCP server on Windows can access Obsidian locally
 - Claude Code on WSL2 accesses Windows server via bridge IP
+
+```text
                   │ Bridge IP (172.19.x.x.x:3000)
                   ↓
 ┌─────────────────────────────────────────────┐
 │              WSL2                           │
 │                                             │
 │  Claude Code CLI                            │
-│    - Connects to http://172.19.x.x.x:3000  │
+│    - Connects to [http://172.19.x.x.x:3000](http://172.19.x.x.x:3000)  │
 └─────────────────────────────────────────────┘
 ```
 
 **Key points:**
+
 - Obsidian REST API only listens on `127.0.0.1:27123` (Windows localhost)
 - If MCP server ran on WSL2, it couldn't access Windows localhost
 - MCP server on Windows can access Obsidian locally
