@@ -315,47 +315,10 @@ AI optimal avec /active/:
 - `src/client/obsidian.ts` - Ajouter méthode `searchSimple()`
 - `src/tools/search.ts` - Réécrire complètement
 
-**Ancienne implémentation (À SUPPRIMER):**
-```typescript
-// 1. walkVault() → Liste tous fichiers
-// 2. Promise.allSettled(batch.map(readFile))
-// 3. Pattern matching ligne par ligne
-```
-
-**Nouvelle implémentation:**
-```typescript
-// src/client/obsidian.ts
-async searchSimple(query: string, contextLength?: number) {
-  const response = await this.client.post('/search/simple/', {
-    query,
-    contextLength: contextLength || 100
-  });
-  return response.data;
-}
-
-// src/tools/search.ts
-async search(client, args) {
-  const results = await client.searchSimple(
-    args.query,
-    args.context_lines
-  );
-
-  return {
-    success: true,
-    data: {
-      matches: results.map(r => ({
-        file: r.filename,
-        score: r.score,
-        matches: r.matches.map(m => ({
-          line: m.match.start.line,
-          content: m.context
-        }))
-      })),
-      total_matches: results.length
-    }
-  };
-}
-```
+**Changements:**
+- Supprimer: `walkVault()` + boucle de lecture fichiers
+- Ajouter: `client.searchSimple()` → Appel `POST /search/simple/`
+- Retour: Format standardisé avec scores de pertinence
 
 **Tests:**
 - Query simple
@@ -410,129 +373,27 @@ IMPORTANT:
 **Implémentation:**
 
 **Fichiers à créer:**
-- `src/tools/edit.ts` - Nouvel outil
-- `src/types/tools.ts` - Ajouter `EditFileArgs`
+- `src/tools/edit.ts` - Logique principale
+- `src/types/tools.ts` - Type `EditFileArgs`
 
 **Fichiers à modifier:**
-- `src/server/http.ts` - Enregistrer outil
+- `src/server/http.ts` - Enregistrer tool schema
 
-**Code:**
-```typescript
-// src/tools/edit.ts
-import type { ObsidianClient } from '../client/obsidian.js';
-import type { ToolResult } from '../types/index.js';
-import { invalidateFilesCache } from './find.js';
+**Logique:**
+1. Lire fichier complet (`readFile`)
+2. Compter occurrences de `old_string`
+3. Valider unicité (ou `replace_all=true`)
+4. Remplacer via `content.replace()` ou `.replaceAll()`
+5. Écrire fichier (`writeFile`)
+6. Invalider cache
 
-export async function editFile(
-  client: ObsidianClient,
-  args: {
-    path: string;
-    old_string: string;
-    new_string: string;
-    replace_all?: boolean;
-  }
-): Promise<ToolResult> {
-  try {
-    // Validation
-    if (!args.path || !args.old_string || args.new_string === undefined) {
-      return {
-        success: false,
-        error: 'path, old_string, and new_string are required',
-      };
-    }
+**Gestion erreurs:**
+- 0 occurrence → "old_string not found"
+- N occurrences sans `replace_all` → "Found N, use replace_all or add context"
 
-    // 1. Read current content
-    const content = await client.readFile(args.path);
-
-    // 2. Count occurrences
-    const parts = content.split(args.old_string);
-    const occurrences = parts.length - 1;
-
-    if (occurrences === 0) {
-      return {
-        success: false,
-        error: `old_string not found in ${args.path}. Make sure it matches exactly (including whitespace).`,
-      };
-    }
-
-    if (!args.replace_all && occurrences > 1) {
-      return {
-        success: false,
-        error: `Found ${occurrences} occurrences of old_string. Either:\n` +
-               `1. Set replace_all=true to replace all ${occurrences} occurrences, OR\n` +
-               `2. Include more context in old_string to make it unique`,
-      };
-    }
-
-    // 3. Replace
-    const newContent = args.replace_all
-      ? content.replaceAll(args.old_string, args.new_string)
-      : content.replace(args.old_string, args.new_string);
-
-    // 4. Write back
-    await client.writeFile(args.path, newContent);
-
-    // Invalidate cache
-    invalidateFilesCache();
-
-    return {
-      success: true,
-      data: {
-        path: args.path,
-        occurrences_replaced: args.replace_all ? occurrences : 1,
-        message: `Successfully replaced ${args.replace_all ? occurrences : 1} occurrence(s)`,
-      },
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-```
-
-**Tool Schema (http.ts):**
-```typescript
-{
-  name: 'edit_file',
-  description: 'Surgically edit file content using exact string replacement. Use for arbitrary text edits. IMPORTANT: old_string must match exactly including whitespace. Include context for uniqueness. For structured edits (headings/frontmatter), use patch_file instead.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      path: {
-        type: 'string',
-        description: 'File path to edit (e.g., "Notes/meeting.md")'
-      },
-      old_string: {
-        type: 'string',
-        description: 'Exact text to replace (must match exactly including whitespace). Include enough context to ensure uniqueness.'
-      },
-      new_string: {
-        type: 'string',
-        description: 'Replacement text'
-      },
-      replace_all: {
-        type: 'boolean',
-        description: 'Replace all occurrences (default: false). If false and multiple matches exist, returns error.'
-      }
-    },
-    required: ['path', 'old_string', 'new_string'],
-  },
-}
-```
-
-**Tests à écrire:**
-```typescript
-// Test 1: Simple unique replacement
-// Test 2: Multiple occurrences without replace_all (should error)
-// Test 3: Multiple occurrences with replace_all=true
-// Test 4: old_string not found (should error)
-// Test 5: Preserve indentation/whitespace
-// Test 6: Replace across multiple lines
-// Test 7: Empty new_string (deletion)
-// Test 8: Unicode/emoji handling
-```
+**Tests clés:** (8 tests)
+- Replacement unique, multiple (error), replace_all
+- Not found, indentation, multiligne, unicode
 
 **Impact:**
 - ✅ 98% réduction tokens AI (200 vs 10,000)
@@ -582,149 +443,30 @@ Operations:
 
 **Implémentation:**
 
+**Fichiers à créer:**
+- `src/tools/patch.ts` - Logique principale
+
 **Fichiers à modifier:**
-- `src/client/obsidian.ts` - Ajouter méthode `patchFile()`
-- `src/tools/patch.ts` - Créer nouvel outil
-- `src/types/tools.ts` - Ajouter `PatchFileArgs`
-- `src/server/http.ts` - Enregistrer outil
+- `src/client/obsidian.ts` - Ajouter `patchFile(path, operation, targetType, target, content)`
+- `src/types/tools.ts` - Type `PatchFileArgs`
+- `src/server/http.ts` - Enregistrer tool schema
 
-**Code:**
-```typescript
-// src/client/obsidian.ts - Ajouter cette méthode
-async patchFile(
-  path: string,
-  operation: 'append' | 'prepend' | 'replace',
-  targetType: 'heading' | 'block' | 'frontmatter',
-  target: string,
-  content: string
-): Promise<void> {
-  this.validatePath(path);
-  const encoded = this.encodePath(path);
+**Logique:**
+1. Valider params (operation, target_type, target requis)
+2. Appeler `PATCH /vault/{path}` avec headers:
+   - `Operation`: append/prepend/replace
+   - `Target-Type`: heading/block/frontmatter
+   - `Target`: identifiant section
+3. Retourner succès/erreur
 
-  await this.client.patch(`/vault/${encoded}`, content, {
-    headers: {
-      'Content-Type': 'text/markdown',
-      'Operation': operation,
-      'Target-Type': targetType,
-      'Target': target,
-    },
-  });
-}
+**Gestion erreurs:**
+- Target not found → Propagé par API Obsidian
+- Invalid operation/target_type → Validation côté tool
 
-// src/tools/patch.ts - Nouveau fichier
-import type { ObsidianClient } from '../client/obsidian.js';
-import type { ToolResult } from '../types/index.js';
-
-export async function patchFile(
-  client: ObsidianClient,
-  args: {
-    path: string;
-    operation: 'append' | 'prepend' | 'replace';
-    target_type: 'heading' | 'block' | 'frontmatter';
-    target: string;
-    content: string;
-  }
-): Promise<ToolResult> {
-  try {
-    // Validation
-    if (!args.path || !args.operation || !args.target_type || !args.target || args.content === undefined) {
-      return {
-        success: false,
-        error: 'All parameters (path, operation, target_type, target, content) are required',
-      };
-    }
-
-    const validOperations = ['append', 'prepend', 'replace'];
-    if (!validOperations.includes(args.operation)) {
-      return {
-        success: false,
-        error: `Invalid operation: ${args.operation}. Must be one of: ${validOperations.join(', ')}`,
-      };
-    }
-
-    const validTargetTypes = ['heading', 'block', 'frontmatter'];
-    if (!validTargetTypes.includes(args.target_type)) {
-      return {
-        success: false,
-        error: `Invalid target_type: ${args.target_type}. Must be one of: ${validTargetTypes.join(', ')}`,
-      };
-    }
-
-    // Call native PATCH API
-    await client.patchFile(
-      args.path,
-      args.operation,
-      args.target_type,
-      args.target,
-      args.content
-    );
-
-    return {
-      success: true,
-      data: {
-        path: args.path,
-        operation: args.operation,
-        target_type: args.target_type,
-        target: args.target,
-        message: `Successfully ${args.operation}ed content ${args.target_type === 'frontmatter' ? 'to' : 'relative to'} "${args.target}"`,
-      },
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-```
-
-**Tool Schema (http.ts):**
-```typescript
-{
-  name: 'patch_file',
-  description: 'Edit structured content (headings, blocks, frontmatter) using native PATCH API. More efficient than edit_file for section-based edits. Use cases: modify heading, update frontmatter field, edit block reference.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      path: {
-        type: 'string',
-        description: 'File path to patch (e.g., "Notes/meeting.md")'
-      },
-      operation: {
-        type: 'string',
-        enum: ['append', 'prepend', 'replace'],
-        description: 'Operation: append (add after), prepend (add before), replace (overwrite)'
-      },
-      target_type: {
-        type: 'string',
-        enum: ['heading', 'block', 'frontmatter'],
-        description: 'Type of target: heading (section title), block (^block-id), frontmatter (YAML key)'
-      },
-      target: {
-        type: 'string',
-        description: 'Target identifier: heading title (e.g., "Notes"), block ID (e.g., "^abc123"), or frontmatter key (e.g., "status")'
-      },
-      content: {
-        type: 'string',
-        description: 'Content to insert/replace'
-      }
-    },
-    required: ['path', 'operation', 'target_type', 'target', 'content'],
-  },
-}
-```
-
-**Tests à écrire:**
-```typescript
-// Test 1: Replace heading content
-// Test 2: Append under heading
-// Test 3: Prepend before heading
-// Test 4: Update frontmatter field
-// Test 5: Create new frontmatter field
-// Test 6: Edit block reference
-// Test 7: Target not found (should error from API)
-// Test 8: Invalid operation/target_type
-```
+**Tests clés:** (8 tests)
+- Replace/append/prepend heading
+- Frontmatter update/create
+- Block reference, target not found, validation
 
 **Impact:**
 - ✅ 95% réduction tokens pour éditions structurées
@@ -752,37 +494,14 @@ export async function patchFile(
 **À ajouter:**
 - `prepend` - Ajouter au début
 
-**Implémentation:**
-```typescript
-// src/tools/write.ts - Modifier fonction existante
-if (mode === 'prepend') {
-  // Read existing content
-  const fileExists = await client.fileExists(args.path);
-  if (fileExists) {
-    const existing = await client.readFile(args.path);
-    await client.writeFile(args.path, args.content + '\n' + existing);
-  } else {
-    // File doesn't exist, just create it
-    await client.writeFile(args.path, args.content);
-  }
-}
-```
+**Logique:**
+- Si `prepend` + fichier existe: Lire contenu → Préfixer nouveau contenu
+- Si `prepend` + fichier n'existe pas: Créer avec contenu
 
-**Tool Schema (modifier existant):**
-```typescript
-mode: {
-  type: 'string',
-  enum: ['create', 'overwrite', 'append', 'prepend'],
-  description: 'Write mode: create (error if exists), overwrite (replace all), append (add to end), prepend (add to beginning)'
-}
-```
+**Changement minimal:** Ajouter enum `'prepend'` + condition if dans `src/tools/write.ts`
 
-**Tests:**
-```typescript
-// Test 1: Prepend to existing file
-// Test 2: Prepend to non-existing file (should create)
-// Test 3: Preserve existing content
-```
+**Tests:** (3 tests)
+- Prepend existant, prepend nouveau, préserver contenu
 
 **Impact:**
 - ✅ Complète les modes d'écriture
@@ -810,245 +529,28 @@ mode: {
 
 **Implémentation:**
 
+**Fichiers à créer:**
+- `src/tools/active.ts` - 4 fonctions (read/edit/patch/write)
+
 **Fichiers à modifier:**
-- `src/client/obsidian.ts` - Ajouter méthodes `/active/`
-- `src/tools/active.ts` - Créer nouvel outil
-- `src/server/http.ts` - Enregistrer 4 outils
+- `src/client/obsidian.ts` - 4 méthodes:
+  - `readActiveFile()` → `GET /active/`
+  - `writeActiveFile(content)` → `PUT /active/`
+  - `appendActiveFile(content)` → `POST /active/`
+  - `patchActiveFile(operation, targetType, target, content)` → `PATCH /active/`
+- `src/server/http.ts` - Enregistrer 4 tool schemas
 
-**Code:**
-```typescript
-// src/client/obsidian.ts - Ajouter ces méthodes
-async readActiveFile(): Promise<string> {
-  const response = await this.client.get('/active/');
-  return response.data;
-}
+**Logique:** Identique aux outils réguliers mais sans paramètre `path`
+- `read_active_file` → Aucun param
+- `edit_active_file` → old_string, new_string, replace_all
+- `patch_active_file` → operation, target_type, target, content
+- `write_active_file` → content, mode
 
-async writeActiveFile(content: string): Promise<void> {
-  await this.client.put('/active/', content, {
-    headers: { 'Content-Type': 'text/markdown' },
-  });
-}
+**Gestion erreurs:**
+- Aucun fichier actif → "No active file. Please open a file in Obsidian."
 
-async appendActiveFile(content: string): Promise<void> {
-  await this.client.post('/active/', content, {
-    headers: { 'Content-Type': 'text/markdown' },
-  });
-}
-
-async patchActiveFile(
-  operation: 'append' | 'prepend' | 'replace',
-  targetType: 'heading' | 'block' | 'frontmatter',
-  target: string,
-  content: string
-): Promise<void> {
-  await this.client.patch('/active/', content, {
-    headers: {
-      'Content-Type': 'text/markdown',
-      'Operation': operation,
-      'Target-Type': targetType,
-      'Target': target,
-    },
-  });
-}
-
-// src/tools/active.ts - Nouveau fichier
-export async function readActiveFile(client: ObsidianClient): Promise<ToolResult> {
-  try {
-    const content = await client.readActiveFile();
-    return {
-      success: true,
-      data: { content },
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-
-export async function editActiveFile(
-  client: ObsidianClient,
-  args: {
-    old_string: string;
-    new_string: string;
-    replace_all?: boolean;
-  }
-): Promise<ToolResult> {
-  try {
-    // Same logic as edit_file but uses readActiveFile/writeActiveFile
-    const content = await client.readActiveFile();
-
-    // Count occurrences
-    const occurrences = content.split(args.old_string).length - 1;
-
-    if (occurrences === 0) {
-      return {
-        success: false,
-        error: 'old_string not found in active file',
-      };
-    }
-
-    if (!args.replace_all && occurrences > 1) {
-      return {
-        success: false,
-        error: `Found ${occurrences} occurrences. Use replace_all=true or add more context.`,
-      };
-    }
-
-    // Replace
-    const newContent = args.replace_all
-      ? content.replaceAll(args.old_string, args.new_string)
-      : content.replace(args.old_string, args.new_string);
-
-    await client.writeActiveFile(newContent);
-
-    return {
-      success: true,
-      data: {
-        occurrences_replaced: args.replace_all ? occurrences : 1,
-        message: 'Active file edited successfully',
-      },
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-
-export async function patchActiveFile(
-  client: ObsidianClient,
-  args: {
-    operation: 'append' | 'prepend' | 'replace';
-    target_type: 'heading' | 'block' | 'frontmatter';
-    target: string;
-    content: string;
-  }
-): Promise<ToolResult> {
-  try {
-    await client.patchActiveFile(
-      args.operation,
-      args.target_type,
-      args.target,
-      args.content
-    );
-
-    return {
-      success: true,
-      data: {
-        message: `Active file patched successfully`,
-      },
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-
-export async function writeActiveFile(
-  client: ObsidianClient,
-  args: {
-    content: string;
-    mode?: 'overwrite' | 'append' | 'prepend';
-  }
-): Promise<ToolResult> {
-  try {
-    const mode = args.mode || 'overwrite';
-
-    if (mode === 'append') {
-      await client.appendActiveFile(args.content);
-    } else if (mode === 'prepend') {
-      const existing = await client.readActiveFile();
-      await client.writeActiveFile(args.content + '\n' + existing);
-    } else {
-      await client.writeActiveFile(args.content);
-    }
-
-    return {
-      success: true,
-      data: {
-        mode,
-        message: `Active file ${mode}d successfully`,
-      },
-    };
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'Unknown error',
-    };
-  }
-}
-```
-
-**Tool Schemas:**
-```typescript
-// read_active_file
-{
-  name: 'read_active_file',
-  description: 'Read content of the currently active/open file in Obsidian. No path needed. Use when user says "this file", "current file", "open file".',
-  inputSchema: {
-    type: 'object',
-    properties: {},
-  },
-}
-
-// edit_active_file
-{
-  name: 'edit_active_file',
-  description: 'Edit the currently active file using pattern matching. No path needed. Use when user says "edit this file".',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      old_string: { type: 'string', description: 'Exact text to replace' },
-      new_string: { type: 'string', description: 'Replacement text' },
-      replace_all: { type: 'boolean', description: 'Replace all occurrences' }
-    },
-    required: ['old_string', 'new_string'],
-  },
-}
-
-// patch_active_file
-{
-  name: 'patch_active_file',
-  description: 'Patch structured content in active file (headings/frontmatter/blocks). No path needed.',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      operation: { type: 'string', enum: ['append', 'prepend', 'replace'] },
-      target_type: { type: 'string', enum: ['heading', 'block', 'frontmatter'] },
-      target: { type: 'string', description: 'Target identifier' },
-      content: { type: 'string', description: 'Content to insert/replace' }
-    },
-    required: ['operation', 'target_type', 'target', 'content'],
-  },
-}
-
-// write_active_file
-{
-  name: 'write_active_file',
-  description: 'Write to active file. No path needed. Modes: overwrite (replace all), append (add to end), prepend (add to beginning).',
-  inputSchema: {
-    type: 'object',
-    properties: {
-      content: { type: 'string', description: 'Content to write' },
-      mode: { type: 'string', enum: ['overwrite', 'append', 'prepend'], description: 'Write mode (default: overwrite)' }
-    },
-    required: ['content'],
-  },
-}
-```
-
-**Tests:**
-```typescript
-// read_active_file: Test 1-2
-// edit_active_file: Test 3-6
-// patch_active_file: Test 7-10
-// write_active_file: Test 11-14
-```
+**Tests:** (14 tests)
+- read: 2 tests, edit: 4 tests, patch: 4 tests, write: 4 tests
 
 **Impact:**
 - ✅ 50% réduction tokens (pas besoin find path)
@@ -1071,25 +573,11 @@ export async function writeActiveFile(
 
 **Outil modifié:** `read_file`
 
-**API étendue:**
-```typescript
-read_file({
-  path: string,
-  offset?: number,    // Ligne de début
-  limit?: number      // Nombre de lignes
-})
-```
+**Nouveaux params:** `offset` (ligne début), `limit` (nb lignes)
 
-**Use case:**
-```typescript
-// Lire lignes 100-120 d'un gros fichier
-read_file({
-  path: "large-file.md",
-  offset: 100,
-  limit: 20
-})
-// Au lieu de lire 5000 lignes complètes
-```
+**Use case:** Lire lignes 100-120 au lieu de 5000 lignes complètes
+
+**Logique:** Split content par lignes → slice(offset, offset+limit)
 
 **Impact:**
 - ✅ 94% réduction tokens pour grands fichiers
