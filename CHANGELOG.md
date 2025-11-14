@@ -4,7 +4,7 @@ All notable changes to Obsidian HTTP MCP.
 
 ---
 
-## [Unreleased] - v1.1 Token Optimization
+## [Unreleased] - v1.0.7 Edit File Tool
 
 ### Added
 
@@ -12,14 +12,20 @@ All notable changes to Obsidian HTTP MCP.
   - replace_all flag for global replacements
   - Uniqueness validation (errors if multiple matches without flag)
   - Cache invalidation for immediate discoverability
-  - Impact: Enables surgical edits without full file rewrites
+  - Impact: Enables surgical edits without manual full file rewrites
 
 ### Technical Notes
 
-- Implementation: src/tools/edit.ts (88 lines)
-- Pattern: Read full file → replace → write (Phase 1 MVP)
-- Next: Add partial read_file (offset/limit) for 94% token reduction
-- Why not PATCH: Local REST API PATCH requires AI to read full file anyway (heading/block targeting needs context), pattern matching more flexible
+- Implementation: src/tools/edit.ts (88 lines), 3 files modified
+- Pattern: Read full file → pattern match → replace → write
+- Why not PATCH: Local REST API PATCH requires AI to read full file anyway to discover heading names (heading/block targeting needs full context). Pattern matching is structure-agnostic and more flexible.
+- Architecture decision documented in ROADMAP.md
+
+### Documentation
+
+- Updated ROADMAP.md: Moved edit_file to v1.0.7 (completed), shifted tree/rename to v1.0.8/v1.0.9
+- Removed patch_file from roadmap (redundant with edit_file, proven via doc-fetcher analysis)
+- Deleted obsolete implementation plans (EDIT_FILE_IMPLEMENTATION_PLAN.md, IMPLEMENTATION_PLAN.md)
 
 ---
 
