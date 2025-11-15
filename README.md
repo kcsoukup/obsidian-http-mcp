@@ -5,8 +5,10 @@
 **Also compatible with**: Claude Desktop, Codex, Gemini, and other MCP clients
 
 [![npm version](https://badge.fury.io/js/obsidian-http-mcp.svg)](https://www.npmjs.com/package/obsidian-http-mcp)
+[![npm](https://img.shields.io/npm/dw/obsidian-http-mcp)](https://www.npmjs.com/package/obsidian-http-mcp)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![GitHub](https://img.shields.io/github/stars/NasAndNora/obsidian-http-mcp?style=social)](https://github.com/NasAndNora/obsidian-http-mcp)
+[![Sponsor](https://img.shields.io/github/sponsors/NasAndNora?style=flat&logo=githubsponsors)](https://github.com/sponsors/NasAndNora)
 
 ## Why This Exists
 

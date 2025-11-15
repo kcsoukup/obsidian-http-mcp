@@ -22,7 +22,10 @@
     "gemini",
     "model-context-protocol",
     "stdio-free",
-    "no-stdio"
+    "no-stdio",
+    "ai",
+    "llm",
+    "knowledge-management"
   ],
   "author": "Nas <chinafih@outlook.fr>",
   "repository": {

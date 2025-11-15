@@ -201,22 +201,7 @@ rename({ path: "PERSO", newName: "Passions-Perso", type: "directory" })
 
 ---
 
-#### Feature 1: `edit_file` tool
-
-Smart editing with old_string/new_string pattern (like native Claude Code Edit tool)
-
-**API**:
-```typescript
-edit_file({ path: string, old_string: string, new_string: string, replace_all?: boolean })
-```
-
-**Returns**: Diff output only (not full file)
-
-**Token impact**: ~98% reduction (example: 300-line file edit = 200 tokens instead of 10,000)
-
----
-
-#### Feature 2: Partial `read_file`
+#### Feature 1: Partial `read_file`
 
 Read specific line ranges instead of entire file
 
@@ -229,16 +214,68 @@ read_file({ path: string, offset?: number, limit?: number })
 
 ---
 
-#### Feature 3: Enhanced `search`
+#### Feature 2: Native Search API (Performance Critical)
 
-Add path filter and context_lines control
+Replace manual file walking with Obsidian's native search endpoint
+
+**Current Problem:**
+- Manual implementation: walkVault() → read each file → pattern match
+- Performance: 2-3s for 1000 files
+- API calls: 1000+ GET requests
+
+**Solution:**
+Use `POST /search/simple/` endpoint (Obsidian Local REST API v3.0+)
 
 **API**:
 ```typescript
-search({ query: string, path?: string, context_lines?: number, ... })
+search({
+  query: string,
+  contextLength?: number,  // Context chars around match
+  path?: string            // Optional: filter to specific path
+})
 ```
 
-**Token impact**: ~98% reduction when targeting specific file (example: find text in file = 100 tokens instead of 5,000)
+**Returns:**
+```json
+[{
+  "filename": "path/to/file.md",
+  "score": 0.95,
+  "matches": [{
+    "match": { "start": 120, "end": 135 },
+    "context": "...text..."
+  }]
+}]
+```
+
+**Performance impact**:
+- 2-3s → ~100ms (95% faster)
+- 1000+ GET → 1 POST (99% fewer API calls)
+- Native Obsidian indexing + relevance scoring
+
+**Token impact**: Minimal (response already optimized with context snippets)
+
+---
+
+#### Feature 3: Enhanced Search Parameters
+
+Add optional parameters for precise search control
+
+**API**:
+```typescript
+search({
+  query: string,
+  contextLength?: number,  // From Feature 2
+  path?: string,            // Filter: specific file or folder
+  maxResults?: number       // Limit results (default: 10)
+})
+```
+
+**Use cases:**
+- Search in specific file: `path: "TECH/notes.md"`
+- Search in folder: `path: "BUSINESS/"`
+- Control context size: `contextLength: 50`
+
+**Token impact**: ~90% reduction when filtering to specific path
 
 ---
 
@@ -390,6 +427,7 @@ read_file({ vault: "work", path: "meeting.md" })
 - [ ] **Template support** (Templater integration)
 - [ ] **Daily notes helper** (auto-create, navigate)
 - [ ] **Graph tools** (backlinks, forward links)
+- [ ] **Commands API** (execute Obsidian commands, UI automation)
 
 **NOT in scope** (separate projects if needed):
 
