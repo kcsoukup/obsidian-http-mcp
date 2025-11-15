@@ -94,7 +94,7 @@ export function fuzzyMatch(query: string, candidates: string[]): FileMatch[] {
     .sort((a, b) => b.score - a.score);
 }
 
-// Fonction principale de recherche
+// Main search function
 export function search(options: SearchOptions, allFiles: string[]): FileMatch[] {
   const { query, maxResults = 10, fuzzy = false } = options;
 

@@ -7,11 +7,4 @@ dist/
 .early.coverage
 
 # Internal docs (not for public repo)
-AGENTS.md
-SUIVI.md
-OUTREACH_STRATEGY.md
-CLAUDE.md
-PRD.md
-STRUCTURE.md
-MULTI_VAULT_DESIGN.md
-IMPLEMENTATION_PLAN.md
+PersonalDocs/

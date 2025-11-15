@@ -19,14 +19,7 @@ smithery.yaml
 .env.example
 
 # Internal documentation
-AGENTS.md
-SUIVI.md
-OUTREACH_STRATEGY.md
-CLAUDE.md
-PRD.md
-STRUCTURE.md
-MULTI_VAULT_DESIGN.md
-RELEASE.md
+PersonalDocs/
 
 # Git
 .git

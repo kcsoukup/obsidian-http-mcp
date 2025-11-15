@@ -91,11 +91,11 @@
 
 ---
 
-### v1.0.7 - Edit File Tool ✅ COMPLETED
+### v1.0.7 - Edit File Tool ✅ COMPLETED (2025-11-15)
 
 **Goal**: Pattern matching edits for surgical file modifications
 
-**Status**: Implemented in branch review-project-documentation (commit 5590ad2)
+**Status**: Released on npm
 
 **API**:
 ```typescript
@@ -473,11 +473,12 @@ Focus on:
 
 ### Growth (secondary)
 
-| Metric | v1.0 | v2.0 |
-|--------|------|------|
-| GitHub Stars | 10+ | 100+ |
-| npm Downloads/week | 20+ | 200+ |
-| Bug Reports | < 3/month | < 5/month |
+| Metric | v1.0 | v1.0.7 (current) | v2.0 |
+|--------|------|------------------|------|
+| GitHub Stars | 10+ | 2 | 100+ |
+| npm Downloads/month | 20+ | 461 ✅ | 200+ |
+| npm Downloads/week | - | 53 | - |
+| Bug Reports | < 3/month | 0 ✅ | < 5/month |
 
 ---
 

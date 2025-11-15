@@ -1,7 +1,7 @@
 // Search types for file matching
 
 export interface FileMatch {
-  path: string;           // Full path: "BUSINESS/🧪Revendeur.md"
+  path: string;           // Full path: "BUSINESS/Project-Notes.md"
   score: number;          // 0-1 similarity score
   matchType: 'exact' | 'contains' | 'fuzzy';
 }

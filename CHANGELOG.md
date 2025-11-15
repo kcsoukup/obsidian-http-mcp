@@ -4,7 +4,7 @@ All notable changes to Obsidian HTTP MCP.
 
 ---
 
-## [Unreleased] - v1.0.7 Edit File Tool
+## [1.0.7] - 2025-11-15
 
 ### Added
 
@@ -23,9 +23,7 @@ All notable changes to Obsidian HTTP MCP.
 
 ### Documentation
 
-- Updated ROADMAP.md: Moved edit_file to v1.0.7 (completed), shifted tree/rename to v1.0.8/v1.0.9
-- Removed patch_file from roadmap (redundant with edit_file, proven via doc-fetcher analysis)
-- Deleted obsolete implementation plans (EDIT_FILE_IMPLEMENTATION_PLAN.md, IMPLEMENTATION_PLAN.md)
+- Removed patch_file from roadmap (redundant with edit_file, proven via analysis)
 
 ---
 
