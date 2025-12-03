@@ -9,6 +9,8 @@ services:
       - "3000:3000"
     env_file:
       - .env
+    networks:
+      - damage-lan-prod
     restart: unless-stopped
     healthcheck:
       test:
@@ -22,3 +24,8 @@ services:
       timeout: 3s
       start_period: 5s
       retries: 3
+
+networks:
+  damage-lan-prod:
+    external: true
+    name: damage-lan-prod
